@@ -4,6 +4,8 @@
 
 **Location** : SL-1, SL-2, SL-3
 
+**Feedback Form** : [CS231 Mega Feedback Form](https://forms.gle/SwjpLZEidyc4rwYK7)
+
 **Seating - Arrangement** : [CS-231 Lab Allocation](https://docs.google.com/spreadsheets/d/1tayAATniMwQ7fh3_62BuHnNRad7Ltvios91gzEG3gZ0/edit?usp=sharing)
 
 **Crib Form** : [\[CS231\] Re-Evaluation Request Form](https://docs.google.com/forms/d/e/1FAIpQLSfki4vqrKC4cpkJJB3ldHS-DOxl_E4kSprBl13Kh58UfaA6ng/viewform?usp=header)
