@@ -21,7 +21,7 @@ fi
 
 mkdir -p "$ROLL_NO"
 
-FILES=(./task1/plot.py ./task1/latency.cpp ./task2/matmul.cpp ./task3/branchy.cpp ./task4/matmul_sse.cpp)
+FILES=(./task1/latency.cpp ./task1/plot.py ./task2/matmul.cpp ./task3/branchy.cpp ./task4/matmul_sse.cpp ./labexam/poly.cpp)
 
 echo "Packaging assignment files..."
 for file in "${FILES[@]}"; do

@@ -1,0 +1,218 @@
+.SUFFIXES:
+
+# Pick the first available compiler: g++-13 > g++-12 > g++-11 > g++
+CXX_CANDIDATES := g++-13 g++-12 g++-11 g++
+CXX := $(firstword $(foreach c,$(CXX_CANDIDATES),$(if $(shell command -v $(c) 2>/dev/null),$(c))))
+
+ifeq ($(CXX),)
+$(error No g++ found (tried: $(CXX_CANDIDATES)))
+endif
+
+# Tasks 1-3 keep the code exactly as written (-O0, like inlab 8).
+# Tasks 4-5 are built the way real programs are (-O2); frame pointers keep perf call stacks readable.
+CXXFLAGS_O0 := -g -O0 -std=c++23
+CXXFLAGS_O2 := -g -O2 -fno-omit-frame-pointer -std=c++23
+# Task 6 (optional) is built like the original challenge: full optimisation for this CPU, threads allowed.
+CXXFLAGS_T6 := -g -O3 -march=native -std=c++23 -pthread
+
+# Optional SIMD widths for task 3: make mask SIMD=avx   or   SIMD=avx512
+SIMD_FLAGS_sse2   :=
+SIMD_FLAGS_avx    := -mavx
+SIMD_FLAGS_avx512 := -mavx -mavx512f
+SIMD ?= sse2
+ifeq (,$(filter $(SIMD),sse2 avx avx512))
+$(error SIMD must be sse2, avx or avx512, not '$(SIMD)')
+endif
+ifeq ($(SIMD),avx)
+ifeq (,$(shell grep -o -w avx /proc/cpuinfo | head -1))
+$(error this CPU has no AVX: use SIMD=sse2)
+endif
+endif
+ifeq ($(SIMD),avx512)
+ifeq (,$(shell grep -o -w avx512f /proc/cpuinfo | head -1))
+$(error this CPU has no AVX-512 (avx512f): use SIMD=avx or SIMD=sse2)
+endif
+endif
+
+CPU ?= 1
+RUN = taskset -c $(CPU)
+
+RED   := "\\033[31m"
+GREEN := "\\033[32m"
+RESET := "\\033[0m"
+
+# Source used for a program: its *_solution.cpp if one exists, else the file itself.
+pick = $(or $(wildcard $(basename $(1))_solution.cpp),$(1))
+
+PROGRAMS := heat_base heat_lookup heat_fixed repeated_array weird_matrix mask naive optim grid_bfs packets spawn_ref spawn_sim
+
+.PHONY: default clean $(PROGRAMS) task1-input
+
+default:
+	@printf "Usage: make <program> [args=...] [CPU=n]\n"
+	@printf "Programs: $(PROGRAMS)\n"
+
+# ---------------- build rules ----------------
+
+heat_base.out: $(call pick,task1/heat_base.cpp)
+	$(CXX) $(CXXFLAGS_O0) -o $@ $^
+heat_lookup.out: $(call pick,task1/heat_lookup.cpp)
+	$(CXX) $(CXXFLAGS_O0) -o $@ $^
+heat_fixed.out: $(call pick,task1/heat_fixed.cpp)
+	$(CXX) $(CXXFLAGS_O0) -o $@ $^
+
+repeated_array.out: $(call pick,task2/repeated_array.cpp)
+	$(CXX) $(CXXFLAGS_O0) -o $@ $^
+weird_matrix.out: $(call pick,task2/weird_matrix.cpp)
+	$(CXX) $(CXXFLAGS_O0) -o $@ $^
+
+mask.out: $(call pick,task3/mask.cpp) task3/vector.hpp
+	$(CXX) $(CXXFLAGS_O0) $(SIMD_FLAGS_$(SIMD)) -o $@ $(filter %.cpp,$^)
+naive.out: task3/naive.cpp task3/main.cpp task3/matrix.hpp
+	$(CXX) $(CXXFLAGS_O0) -o $@ $(filter %.cpp,$^)
+optim.out: $(call pick,task3/optim.cpp) task3/main.cpp task3/matrix.hpp
+	$(CXX) $(CXXFLAGS_O0) $(SIMD_FLAGS_$(SIMD)) -o $@ $(filter %.cpp,$^)
+grid_bfs.out: $(call pick,task4/grid_bfs.cpp)
+	$(CXX) $(CXXFLAGS_O2) -o $@ $^
+
+packets.out: $(call pick,task5/packets.cpp)
+	$(CXX) $(CXXFLAGS_O2) -o $@ $^
+
+spawn_ref.out: task6/spawn_ref.cpp
+	$(CXX) $(CXXFLAGS_T6) -o $@ $^
+spawn_sim.out: $(call pick,task6/spawn_sim.cpp)
+	$(CXX) $(CXXFLAGS_T6) -o $@ $^
+
+# Always rebuild. makefile and solution_makefile write the same .out names, and an SSE2 build must
+# not reuse an AVX one, so a stale binary must never run.
+.PHONY: $(addsuffix .out,$(PROGRAMS))
+
+# ---------------- run rules ----------------
+
+$(PROGRAMS): %: %.out
+	@echo "$(RUN) ./$*.out $(args)"
+	@$(RUN) ./$*.out $(args)
+
+# Print the facts about this machine that change performance numbers (paste into your findings).
+.PHONY: sysinfo
+sysinfo:
+	@bash sysinfo.sh
+
+# Input file for the gzip part of task 1 (79 MB of text, same on every machine).
+task1-input: task1/input.txt
+task1/input.txt:
+	seq 1 10000000 > $@
+
+# ---------------- correctness checks (no timing, no marks) ----------------
+
+# Tasks 2 and 3: the code outside the /* ... BELOW */ ... /* ... ABOVE */ markers, and the files you must not
+# edit, must be unchanged; then each program's own PASS/FAIL line.
+.PHONY: task2-check task3-check
+task2-check: repeated_array.out weird_matrix.out
+	@bash check_fixed.sh markers $(call pick,task2/repeated_array.cpp) 7a29107940a29682
+	@bash check_fixed.sh markers $(call pick,task2/weird_matrix.cpp) 2a8c2e0a02d6cb72
+	@$(RUN) ./repeated_array.out yours | tail -1
+	@$(RUN) ./weird_matrix.out yours | tail -1
+
+task3-check: mask.out optim.out
+	@bash check_fixed.sh markers $(call pick,task3/mask.cpp) 93a693d02fe8632e
+	@bash check_fixed.sh whole task3/main.cpp 64ba5cb6ae0bbfff
+	@bash check_fixed.sh whole task3/naive.cpp 0981f31b0324cf2b
+	@bash check_fixed.sh whole task3/matrix.hpp 1c396bb00738b7c4
+	@bash check_fixed.sh whole task3/vector.hpp 267f5db387028585
+	@$(RUN) ./mask.out yours | tail -1
+	@$(RUN) ./optim.out | tail -1
+
+# Task 4: every output line except time_sec must match task4/expected_output.txt.
+.PHONY: task4-check task5-check
+task4-check: grid_bfs.out
+	@./grid_bfs.out --test
+	@$(RUN) ./grid_bfs.out | grep -v '^time_sec' | diff -q - task4/expected_output.txt >/dev/null \
+		&& printf $(GREEN)"PASS"$(RESET)" -- output matches task4/expected_output.txt\n" \
+		|| printf $(RED)"FAIL"$(RESET)" -- run: diff <(./grid_bfs.out | grep -v time_sec) task4/expected_output.txt\n"
+
+# Task 5: the build_* functions must be unchanged, and the answer for history_cols = 128 and 2048 must
+# match task5/expected_output.txt. (Function signatures and call sites are checked by hand.)
+task5-check: packets.out
+	@bash check_fixed.sh build $(call pick,task5/packets.cpp) a29525367e0304bb
+	@while read cols want; do \
+		got=$$($(RUN) ./packets.out $$cols); \
+		if [ "$$got" = "$$want" ]; then printf $(GREEN)"PASS"$(RESET)" -- history_cols=%s: %s\n" $$cols $$got; \
+		else printf $(RED)"FAIL"$(RESET)" -- history_cols=%s: got %s, expected %s\n" $$cols $$got $$want; fi; \
+	done < task5/expected_output.txt
+
+# Optional task 6: make task6-grids once (inputs + expected outputs, about a minute), then make task6.
+.PHONY: task6-grids
+task6-grids: spawn_ref.out
+	bash task6/run.sh grids
+task6: spawn_sim.out
+	@bash task6/run.sh check
+
+clean:
+	@rm -fv $(addsuffix .out,$(PROGRAMS)) task1/input.txt task1/input.txt.gz final_grid.csv \
+		perf.data perf.data.old cachegrind.out.* callgrind.out.*
+	@rm -rfv task6/grids
+
+ifdef tasks
+
+# 1. Run find at build time in Make's environment
+FOUND_FILES := $(shell find -L $(addprefix ./,$(tasks)) \
+	\( -type d -iname '*solution*' -prune \) -o \
+	\( -type f -o -type l \) \
+	! \( -iname '*.tex' -o -iname '*.sty' \) \
+	! -iname '*solution*' )
+
+# 2. Store the script template in a clean multiline variable
+define SCRIPT_CONTENT
+#!/usr/bin/env bash
+set -e
+
+RED=$$(printf '\033[31m')
+GREEN=$$(printf '\033[32m')
+NC=$$(printf '\033[0m')
+
+read -rp "Enter Student Roll Number: " ROLL_NO
+if [ -z "$$ROLL_NO" ]; then
+    printf "$${RED}Error: Roll number cannot be empty.$${NC}\n" >&2
+    exit 1
+fi
+
+# Validate Roll Number against allowed range (901 to 1100)
+VALID_PATTERN="^(210050102|23b0919|24b1017|24b1068|25b(090[1-9]|09[1-9][0-9]|10[0-9][0-9]|1100))$$"
+
+if ! echo "$$ROLL_NO" | grep -qE "$$VALID_PATTERN" ; then
+    printf "$${RED}Error: Invalid student ID. Please check the ID and try again.$${NC}\n" >&2
+    exit 1
+fi
+
+mkdir -p "$$ROLL_NO"
+
+FILES=($(FOUND_FILES))
+
+echo "Packaging assignment files..."
+for file in "$${FILES[@]}"; do
+    if [ -e "$$file" ] || [ -L "$$file" ]; then
+        mkdir -p "$$ROLL_NO/$$(dirname "$$file")"
+        cp -RP "$$file" "$$ROLL_NO/$$file"
+        printf "  $${GREEN}[+] Copied:$${NC} %s\n" "$$file"
+    else
+        printf "$${RED}Error: Required file or symlink missing: %s$${NC}\n" "$$file" >&2
+        rm -rf "$$ROLL_NO"
+        exit 1
+    fi
+done
+
+tar -czf "$${ROLL_NO}.tar.gz" "$$ROLL_NO"
+rm -rf "$$ROLL_NO"
+printf "$${GREEN}Successfully created $${ROLL_NO}.tar.gz$${NC}\n"
+endef
+
+export SCRIPT_CONTENT
+
+.PHONY: build_archive.sh
+
+build_archive.sh:
+	@printf '%s\n' "$$SCRIPT_CONTENT" > build_archive.sh
+	@chmod +x build_archive.sh
+
+endif

@@ -1,0 +1,116 @@
+.SUFFIXES:
+
+AS := nasm
+# LD := gcc
+# LD := g++
+
+ASFLAGS := -g -f elf64
+CFLAGS := -g -O0
+CXXFLAGS := -g -O0 -std=c++23
+LDFLAGS := 
+
+TASKS = $(patsubst %/,%,$(wildcard */))
+TASKS_OUT = $(patsubst %,%.out,$(TASKS))
+
+.PHONY: all clean
+
+default:
+	@printf "Usage: make [task]\n"
+
+.PHONY: $(TASKS_OUT)
+
+$(TASKS): %: %.out
+	@echo "./$*.out"
+	@./$*.out; echo "Return Code: $$?"
+
+.SECONDEXPANSION:
+
+get_all_o_files = $(addsuffix .o, $(basename $(wildcard $1/*.s $1/*.c $1/*.cpp)))
+get_sol_o_files = $(filter %_solution.o, $(call get_all_o_files,$1))
+get_oth_o_files = $(filter-out $(call get_sol_o_files,$1),$(call get_all_o_files,$1))
+get_solbase_o_files = $(patsubst %_solution.o,%.o,$(call get_sol_o_files,$1))
+
+$(TASKS_OUT): %.out: $$(filter-out $$(call get_solbase_o_files,$$*),$$(call get_all_o_files,$$*))
+	ld -o $@ $^
+
+%.o: %.s
+	$(AS) $(ASFLAGS) -o $@ $<
+
+%.o: %.S
+	$(AS) $(ASFLAGS) -o $@ $<
+	
+%.o: %.asm
+	$(AS) $(ASFLAGS) -o $@ $<
+	
+%.o: %.c
+	$(CC) $(CFLAGS) -o $@ $<
+	
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+clean:
+	@rm -fv $(TASKS_OUT) */*.o
+
+ifdef tasks
+
+# 1. Run find at build time in Make's environment
+FOUND_FILES := $(shell find -L $(addprefix ./,$(tasks)) \
+	\( -type d -iname '*solution*' -prune \) -o \
+	\( -type f -o -type l \) \
+	! \( -iname '*.tex' -o -iname '*.sty' \) \
+	! -iname '*solution*' )
+
+# 2. Store the script template in a clean multiline variable
+define SCRIPT_CONTENT
+#!/usr/bin/env bash
+set -e
+
+RED=$$(printf '\033[31m')
+GREEN=$$(printf '\033[32m')
+NC=$$(printf '\033[0m')
+
+read -rp "Enter Student Roll Number: " ROLL_NO
+if [ -z "$$ROLL_NO" ]; then
+    printf "$${RED}Error: Roll number cannot be empty.$${NC}\n" >&2
+    exit 1
+fi
+
+# Validate Roll Number against allowed range (901 to 1100)
+VALID_PATTERN="^(210050102|23b0919|24b1017|24b1068|25b(090[1-9]|09[1-9][0-9]|10[0-9][0-9]|1100))$$"
+
+if ! echo "$$ROLL_NO" | grep -qE "$$VALID_PATTERN" ; then
+    printf "$${RED}Error: Invalid student ID. Please check the ID and try again.$${NC}\n" >&2
+    exit 1
+fi
+
+mkdir -p "$$ROLL_NO"
+
+FILES=($(FOUND_FILES))
+
+echo "Packaging assignment files..."
+for file in "$${FILES[@]}"; do
+    if [ -e "$$file" ] || [ -L "$$file" ]; then
+        mkdir -p "$$ROLL_NO/$$(dirname "$$file")"
+        cp -RP "$$file" "$$ROLL_NO/$$file"
+        printf "  $${GREEN}[+] Copied:$${NC} %s\n" "$$file"
+    else
+        printf "$${RED}Error: Required file or symlink missing: %s$${NC}\n" "$$file" >&2
+        rm -rf "$$ROLL_NO"
+        exit 1
+    fi
+done
+
+tar -czf "$${ROLL_NO}.tar.gz" "$$ROLL_NO"
+rm -rf "$$ROLL_NO"
+printf "$${GREEN}Successfully created $${ROLL_NO}.tar.gz$${NC}\n"
+endef
+
+export SCRIPT_CONTENT
+
+.PHONY: build_archive.sh
+
+build_archive.sh:
+	@printf '%s\n' "$$SCRIPT_CONTENT" > build_archive.sh
+	@chmod +x build_archive.sh
+
+endif
