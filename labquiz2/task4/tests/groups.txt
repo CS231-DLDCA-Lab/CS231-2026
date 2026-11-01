@@ -1,0 +1,9 @@
+# group marks tests (NN = tests/NN_input.txt, hidden = every test in hidden/)
+1 2 01 02
+2 3 03 04 05
+3 4 06 07 08 09
+4 4 10 11 12 13
+5 2 14 15
+6 4 16 17 18 19
+7 2 20 21
+8 5 hidden

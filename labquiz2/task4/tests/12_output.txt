@@ -1,0 +1,14 @@
+pop 3
+size 0:
+size 2: 4 1
+pop 4
+size 1: 1
+size 4: 5 1 2 0
+pop 5
+size 3: 2 1 0
+pop 2
+size 2: 1 0
+pop 1
+size 1: 0
+pop 0
+size 0:

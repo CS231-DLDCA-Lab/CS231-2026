@@ -1,0 +1,42 @@
+push 17
+push 3
+push 99
+push -4
+push 25
+push 25
+push 0
+push 61
+push 8
+push -30
+push 44
+push 12
+push 5
+push 77
+push -1
+push 33
+push 90
+push 2
+push 58
+push 13
+show
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+show

@@ -1,0 +1,1072 @@
+<html style><!--
+ Page saved with SingleFile 
+ url: https://www.cs.virginia.edu/~evans/cs216/guides/x86.html 
+ saved date: Fri Aug 28 2026 13:15:13 GMT+0530 (India Standard Time)
+--><meta charset=utf-8>
+<style>h1{font-family:"Open Sans",helvetica,sans-serif;color:darkblue}h2{font-family:"Open Sans",helvetica,sans-serif;color:darkblue}h3{font-family:"Open Sans",helvetica,sans-serif;color:darkblue}h4{font-family:"Open Sans",helvetica,sans-serif;color:darkblue}body{background:white}title{font-family:"Open Sans",helvetica,sans-serif;color:blue}A:link{color:blue text-decoration: underline}A:visited{color:darkblue}A:active{color:red}body{margin-left:7%;margin-right:7%;margin-top:2%;margin-bottom:2%}h4{margin-left:0%;margin-right:0%}h3{margin-left:0%;margin-right:0%}h2{margin-left:0%;margin-right:0%}h1{text-align:center;margin-left:0%;margin-right:0%}body{font-family:"Open Sans",helvetica,sans-serif}p.page{page-break-after:always}span.keyword{font-family:"Courier New"}span.comment{font-style:italic}div.hanging{padding-left:25px;text-indent:-25px}div.explanation{padding-left:25px}</style>
+<meta name=keywords content="computer science, data structures, algorithms, program representation, bioinformatics">
+<title>
+ Guide to x86 Assembly
+</title>
+<meta name=referrer content=no-referrer><link rel=icon type=image/ico href="data:image/vnd.microsoft.icon;base64,AAABAAEAEBAAAAAAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACoWiz/qFos/6haLP+oWixuqFos/6haLN+oWizgqFos36haLN+oWizQqFos36haLP+oWiyfqFos/6haLP+oWiz/qFoswKhaLMCoWizAqFosSqhaLHCoWizAqFoswKhaLMCoWizAqFoswKhaLMCoWixwqFoscahaLMCoWizAqFoswKhaLL+oWiy/qFosfqhaLFWoWiy/qFosX6haLI+oWiyPqFosj6haLI+oWixfqFosv6haLHyoWiyAqFosv6haLL+oWiz/qFos4ahaLP+oWixuqFos/6haLH+oWiy/qFosv6haLL+oWiy/qFosf6haLP+oWiyfqFos/6haLOGoWiz/qFos/6haLL+oWiz/qFosbqhaLP+oWix/qFosv6haLL+oWiy/qFosv6haLH+oWiz/qFosn6haLP+oWizPqFos/6haLNCoWiz/qFos/6haLG6oWiz/qFosf6haLL+oWiy/qFosv6haLL+oWix/qFos/6haLJ+oWiz/qFos/6haLM6oWizvqFos/6haLP+oWixuqFos/6haLH+oWiy/qFosv6haLL+oWiy/qFosf6haLP+oWiyfqFos/6haLP+oWizvqFosQKhaLP+oWiz/qFosbqhaLP+oWix/qFosv6haLL+oWiy/qFosv6haLH+oWiz/qFosn6haLP+oWiz/qFosz6haLHCoWiyAqFosgKhaLDyoWiyAqFosQKhaLGCoWixgqFosYKhaLGCoWixAqFosgKhaLFioWiyAqFosgKhaLHCoWiz/qFos/6haLP+oWizPqFosb6haLN+oWiz/qFos/6haLP+oWiz/qFos36haLGOoWizPqFos/6haLP+oWiz/qFos/6haLP+oWiz/qFos/6haLP+oWiyPqFosh6haLO+oWiz/qFosl6haLJaoWiz/qFos/6haLP+oWiz/qFos/6haLICoWiyAqFosgKhaLICoWiyAqFosgKhaLHCoWiwgqFosMKhaLGCoWiyAqFosgKhaLICoWiyAqFosgKhaLID///8AqFosj6haLP+oWiz/qFos/6haLP+oWiz/qFos/6haLP+oWiz/qFos/6haLP+oWiz/qFos/6haLI////8A////AP///wCoWiyvqFos/6haLP+oWiz/qFos/6haLP+oWiz/qFos/6haLP+oWiz/qFos/6haLJ////8A////AP///wD///8A////AKhaLJCoWiz/qFos/6haLP+oWiz/qFos/6haLP+oWiz/qFos/6haLJD///8A////AP///wD///8A////AP///wD///8AqFosIKhaLJCoWizAqFos/6haLP+oWizAqFoskKhaLCD///8A////AP///wD///8AEACckRgY//80KP//FCA+LBQgPiwUIP//FCCRjZQgAACX6RLACBD/7QAA8+QDwP//gAGQm8ADq9TgB/+b+B8AFA=="><link rel=canonical href=https://www.cs.virginia.edu/~evans/cs216/guides/x86.html><meta http-equiv=content-security-policy content="default-src 'none'; font-src 'self' data:; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self' data:; script-src 'unsafe-inline' data:; object-src 'self' data:; frame-src 'self' data:;"></head>
+<body>
+<table border=1 rules=none bgcolor=#CC3300 width=100% align=center cellpadding=6 cellspacing=2>
+<tbody><tr>
+<td>
+<font size=-1 color=white>
+<b>University of Virginia Computer Science</b><br>
+<b>CS216: Program and Data Representation, Spring 2006</b></font><br>
+</td>
+<td valign=bottom align=right>
+<font size=-1 color=white>
+<em></em><br>
+ 08 March 2022</font>
+</td>
+</tr>
+</table>
+<div class=body style=padding:10px;margin-left:40px;margin-right:40px>
+<center><h1>x86 Assembly Guide</h1>
+<p>
+<b>Contents:</b> <a href=#registers>Registers</a> | <a href=#memory>Memory and
+Addressing</a> | <a href=#instructions>Instructions</a> | <a href=#calling>Calling Convention</a>
+</p></center>
+<p>
+This guide describes the basics of 32-bit x86 assembly language
+programming, covering a small but useful subset of the available
+instructions and assembler directives. There are several different
+assembly languages for generating x86 machine code. The one we will use
+in CS216 is the Microsoft Macro Assembler (MASM) assembler. MASM uses
+the standard Intel syntax for writing x86 assembly code.
+<p>
+The full x86 instruction set is large and complex (Intel's x86
+instruction set manuals comprise over 2900 pages), and we do not cover
+it all in this guide. For example, there is a 16-bit subset of the x86
+instruction set. Using the 16-bit programming model can be quite
+complex. It has a segmented memory model, more restrictions on register
+usage, and so on. In this guide, we will limit our attention to more
+modern aspects of x86 programming, and delve into the instruction set
+only in enough detail to get a basic feel for x86 programming.
+<p>
+<h3>Resources</h3>
+<ul>
+<li>
+<a href=https://www.cs.virginia.edu/~evans/cs216/guides/vsasm.html>Guide to Using Assembly in Visual Studio</a> —
+a tutorial on building and debugging assembly code in Visual Studio
+<li> <a href=http://www.felixcloutier.com/x86/>Intel x86 Instruction
+ Set Reference</a>
+<li> <a href=http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html>Intel's
+ Pentium Manuals</a> (the full gory details)
+</ul>
+<p></p>
+<h3><a name=registers></a>Registers</h3>
+<p>
+Modern (i.e 386 and beyond) x86 processors have eight 32-bit general
+purpose registers, as depicted in Figure 1. The register names are
+mostly historical. For example, <tt>EAX</tt> used to be called the
+accumulator since it was used by a number of arithmetic operations, and
+<tt>ECX</tt> was known as the counter since it was used to hold a loop
+index. Whereas most of the registers have lost their special purposes in
+the modern instruction set, by convention, two are reserved for special
+purposes — the stack pointer (<tt>ESP</tt>) and the base pointer
+(<tt>EBP</tt>).
+<p>
+ For the <tt>EAX</tt>, <tt>EBX</tt>, <tt>ECX</tt>, and
+<tt>EDX</tt> registers, subsections may be used. For example, the least
+significant 2 bytes of <tt>EAX</tt> can be treated as a 16-bit register
+called <tt>AX</tt>. The least significant byte of <tt>AX</tt> can be
+used as a single 8-bit register called <tt>AL</tt>, while the most
+significant byte of <tt>AX</tt> can be used as a single 8-bit register
+called <tt>AH</tt>. These names refer to the same physical
+register. When a two-byte quantity is placed into <tt>DX</tt>, the
+update affects the value of <tt>DH</tt>, <tt>DL</tt>, and
+<tt>EDX</tt>. These sub-registers are mainly hold-overs from older,
+16-bit versions of the instruction set. However, they are sometimes
+convenient when dealing with data that are smaller than 32-bits
+(e.g. 1-byte ASCII characters). 
+<p>
+When referring to registers in assembly
+language, the names are not case-sensitive. For example, the names
+<tt>EAX</tt> and <tt>eax</tt> refer to the same register.</p>
+<p>
+<p class=page></p>
+<center>
+<a href=https://www.cs.virginia.edu/~evans/cs216/guides/x86-registers.png><img src="data:image/png;base64,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" width=480 height=360></a><br>
+<b>Figure 1. x86 Registers</b>
+</center>
+<h2><a name=memory></a>Memory and Addressing Modes</h2>
+<h4>Declaring Static Data Regions</h4>
+You can declare static data regions (analogous to global variables) in
+x86 assembly using special assembler directives for this purpose. Data
+declarations should be preceded by the <span class=keyword>.DATA</span>
+directive. Following this directive, the directives <span class=Keyword>DB</span>, <span class=Keyword>DW</span>, and <span class=Keyword>DD</span> can be used to declare one, two, and four byte
+data locations, respectively. Declared locations can be labeled with
+names for later reference — this is similar to declaring variables by
+name, but abides by some lower level rules. For example, locations
+declared in sequence will be located in memory next to one another. 
+<p>
+Example declarations:
+<blockquote>
+<table cellpadding=0 border=0 cellspacing=0>
+<tbody><tr><td><span class=Keyword>.DATA</span><td><td><td></tr>
+<tr><td><span class=Keyword>var</span><td><span class=Keyword>DB&nbsp;64&nbsp;&nbsp;</span></td>
+<td><span class=comment>
+; Declare a byte, referred to as location <em>var</em>, containing the value 64.</span></tr>
+<tr>
+<td><span class=Keyword>var2</span></td>
+<td><span class=Keyword>DB&nbsp;?</span></td>
+<td><span class=comment>
+; Declare an uninitialized byte, referred to as location <em>var2</em>.
+</span>
+</td>
+</tr>
+<tr>
+<td></td>
+<td><span class=Keyword>DB&nbsp;10</span></td>
+<td><span class=comment>
+; Declare a byte with no label, containing the value 10.
+Its location is <em>var2</em> + 1.
+</span></td>
+</tr>
+<tr>
+<td><span class=Keyword>X</span></td>
+<td><span class=Keyword>DW&nbsp;?</span></td>
+<td><span class=comment>; Declare
+a 2-byte uninitialized value, referred to as location <em>X</em>.
+</span>
+</td>
+</tr>
+<tr>
+<td><span class=Keyword>Y</span></td>
+<td><span class=Keyword>DD&nbsp;30000&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td><span class=comment>; Declare a 4-byte value, referred to as
+location <em>Y</em>, initialized to 30000.
+</span></td>
+</tr>
+</table>
+</blockquote>
+<p>
+Unlike in high level languages where arrays can have many dimensions and
+are accessed by indices, arrays in x86 assembly language are simply a
+number of cells located contiguously in memory. An array can be declared
+by just listing the values, as in the first example below. Two other
+common methods used for declaring arrays of data are the <span class=Keyword>DUP</span> directive and the use of string literals. The
+<span class=Keyword>DUP</span> directive tells the assembler to duplicate an
+expression a given number of times. For example, <span class=Keyword>4 DUP(2)</span> is equivalent to <span class=Keyword>2, 2, 2,
+2</span>. 
+<p>
+Some examples:</p>
+<blockquote>
+<table cellpadding=0 border=0 cellspacing=0>
+<tbody><tr>
+<td><span class=Keyword>Z</span></td>
+<td><span class=Keyword>DD 1, 2, 3</span></td>
+<td><span class=comment>; Declare three 4-byte values, initialized to 1,
+2, and 3. The value of location <span class=Keyword>Z + 8</span> will be 3.
+</span></td>
+</tr>
+<tr>
+<td>
+<span class=Keyword>bytes&nbsp;&nbsp;</span></td>
+<td>
+<span class=Keyword>DB 10 DUP(?)</span>
+</td>
+<td>
+<span class=comment>; Declare 10 uninitialized bytes starting at
+location <em>bytes</em>.
+</span>
+</td>
+</tr>
+<tr>
+<td><span class=Keyword>arr</span></td>
+<td>
+<span class=Keyword>DD 100 DUP(0)&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td>
+<span class=comment>; Declare 100 4-byte words starting at location
+<span class=Keyword>arr</span>,
+all initialized to 0</span></td>
+</tr>
+<tr>
+<td><span class=Keyword>str</span></td>
+<td><span class=Keyword>DB 'hello',0</span></td>
+<td><span class=comment>; Declare 6 bytes starting at the address str,
+initialized to the ASCII character values
+for <span class=Keyword>hello</span> and the null (<span class=Keyword>0</span>)
+byte.
+</span></td>
+</tr>
+</table>
+</blockquote>
+<h4>Addressing Memory</h4>
+Modern x86-compatible processors are capable of addressing up to
+2<sup>32</sup> bytes of memory: memory addresses are 32-bits wide. In
+the examples above, where we used labels to refer to memory regions,
+these labels are actually replaced by the assembler with 32-bit
+quantities that specify addresses in memory. In addition to supporting
+referring to memory regions by labels (i.e. constant values), the x86
+provides a flexible scheme for computing and referring to memory
+addresses: up to two of the 32-bit registers and a 32-bit signed
+constant can be added together to compute a memory address. One of the
+registers can be optionally pre-multiplied by 2, 4, or 8.<p></p>
+<p></p>
+The addressing modes can be used with many x86 instructions
+(we'll describe them in the next section). Here we illustrate some examples
+using the <span class=Keyword>mov</span> instruction that moves data
+between registers and memory. This instruction has two operands: the
+first is the destination and the second specifies the source. 
+<p></p>
+Some examples of <span class=Keyword>mov</span> instructions
+using address computations are:<p></p>
+<blockquote>
+<table cellpadding=0 border=0 cellspacing=0>
+<tbody><tr>
+<td><span class=Keyword>
+mov eax, [ebx]</span></td>
+<td><span class=comment>;
+Move the 4 bytes in memory at the address contained in EBX into
+EAX</span></td>
+</tr>
+<tr>
+<td><span class=Keyword>
+mov [var], ebx</span>
+</td>
+<td>
+<span class=comment>; Move the contents of EBX into the 4 bytes at
+memory address <em>var</em>. (Note, <em>var</em> is a 32-bit
+constant).</span>
+</td>
+</tr>
+<tr>
+<td><span class=Keyword>
+mov eax, [esi-4]</span>
+</td>
+<td><span class=comment>; Move 4 bytes at memory address
+ESI + (-4) into EAX</span>
+</td>
+</tr>
+<tr>
+<td><span class=Keyword>
+mov [esi+eax], cl</span>
+</td>
+<td><span class=comment>
+; Move the contents of CL into the
+byte at address ESI+EAX</span>
+</td>
+</tr>
+<tr>
+<td><span class=Keyword>
+mov edx, [esi+4*ebx]&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td><span class=comment>
+; Move the 4 bytes of data at address ESI+4*EBX into EDX</span>
+</td>
+</tr>
+</table>
+</blockquote>
+Some examples of invalid address calculations include:
+<p></p>
+<blockquote>
+<table cellpadding=0 border=0 cellspacing=0>
+<tbody><tr>
+<td><span class=Keyword>
+mov eax, [ebx-ecx]</span>
+</td>
+<td><span class=comment>; Can only <b>add</b> register
+values</span></td>
+</tr>
+<tr>
+<td><span class=Keyword>
+mov [eax+esi+edi], ebx&nbsp;&nbsp;&nbsp;&nbsp;</span>
+</td>
+<td>
+<span class=comment>; At most <b>2</b> registers in address
+computation</span>
+</td>
+</tr>
+</table>
+</blockquote>
+<h4>Size Directives</h4>
+In general, the intended size of the data item at a given memory
+address can be inferred from the assembly code instruction in which it
+is referenced. For example, in all of the above instructions, the size
+of the memory regions could be inferred from the size of the register
+operand. When we were loading a 32-bit register, the assembler could
+infer that the region of memory we were referring to was 4 bytes
+wide. When we were storing the value of a one byte register to memory,
+the assembler could infer that we wanted the address to refer to a
+single byte in memory. 
+<p></p>
+However, in some cases the size of a referred-to memory region is
+ambiguous. Consider the instruction <span class=Keyword>mov [ebx],
+2</span>. Should this instruction move the value 2 into the
+single byte at address <span class=Keyword>EBX</span>? Perhaps
+it should move the 32-bit integer representation of 2 into the 4-bytes
+starting at address <span class=Keyword>EBX</span>. Since either
+is a valid possible interpretation, the assembler must be explicitly
+directed as to which is correct. The size directives <span class=Keyword>BYTE PTR</span>, <span class=Keyword>WORD
+PTR</span>, and <span class=Keyword>DWORD PTR</span> serve this purpose,
+indicating sizes of 1, 2, and 4 bytes respectively.
+<p></p>
+For example:
+<blockquote>
+<table cellpadding=0 border=0 cellspacing=0>
+<tbody><tr>
+<td><span class=Keyword>
+mov BYTE PTR [ebx], 2</span></td>
+<td><span class=comment>; Move 2 into the single byte at the address
+stored in EBX.</span>
+</td>
+</tr>
+<tr>
+<td><span class=Keyword>
+mov WORD PTR [ebx], 2</span></td>
+<td><span class=comment>; Move the 16-bit integer representation
+of 2 into the 2 bytes starting at the address in EBX.
+</span>
+</td>
+</tr>
+<tr>
+<td><span class=Keyword>
+mov DWORD PTR [ebx], 2&nbsp;&nbsp;&nbsp;&nbsp;</span>
+</td>
+<td>
+<span class=comment>; Move the 32-bit integer representation of 2 into the
+4 bytes starting at the address in EBX.
+</span>
+</td>
+</tr>
+</table>
+</blockquote>
+<h2><a name=instructions></a>Instructions</h2>
+Machine instructions generally fall into three categories: data
+movement, arithmetic/logic, and control-flow. In this section, we will
+look at important examples of x86 instructions from each category. This
+section should not be considered an exhaustive list of x86 instructions,
+but rather a useful subset. For a complete list, see Intel's
+instruction set reference.
+<p></p>
+We use the following notation:<p></p>
+<blockquote>
+<table cellpadding=0 border=0 cellspacing=0>
+<tbody><tr>
+<td><span class=Keyword>
+&lt;reg32&gt;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td>Any
+32-bit register (<span class=Keyword>EAX</span>, 
+<span class=Keyword>EBX</span>,
+<span class=Keyword>ECX</span>,
+<span class=Keyword>EDX</span>,
+<span class=Keyword>ESI</span>,
+<span class=Keyword>EDI</span>,
+<span class=Keyword>ESP</span>, or
+<span class=Keyword>EBP</span>)
+</td>
+</tr>
+<tr>
+<td><span class=Keyword>
+&lt;reg16&gt;</span></td>
+<td>Any
+16-bit register (<span class=Keyword>AX</span>, 
+<span class=Keyword>BX</span>,
+<span class=Keyword>CX</span>, or
+<span class=Keyword>DX</span>)
+</td>
+</tr>
+<tr>
+<td><span class=Keyword>
+&lt;reg8&gt;</span></td>
+<td>Any
+8-bit register (<span class=Keyword>AH</span>, 
+<span class=Keyword>BH</span>,
+<span class=Keyword>CH</span>,
+<span class=Keyword>DH</span>,
+<span class=Keyword>AL</span>,
+<span class=Keyword>BL</span>,
+<span class=Keyword>CL</span>, or
+<span class=Keyword>DL</span>)
+</td>
+</tr>
+<tr>
+<td><span class=Keyword>
+&lt;reg&gt;</span></td>
+<td>Any register</td>
+</tr>
+<tr>
+<td><td></td>
+</tr>
+<tr>
+<td><span class=Keyword>
+&lt;mem&gt;</span></td>
+<td>A memory address (e.g., <span class=Keyword>[eax]</span>, <span class=Keyword>[var + 4]</span>, or
+<span class=Keyword>dword ptr [eax+ebx]</span>)
+</tr>
+<tr>
+<td><span class=Keyword>
+&lt;con32&gt;</span></td>
+<td>Any 32-bit constant</tr>
+<tr>
+<td><span class=Keyword>
+&lt;con16&gt;</span></td>
+<td>Any 16-bit constant</tr>
+<tr>
+<td><span class=Keyword>
+&lt;con8&gt;</span></td>
+<td>Any 8-bit constant</tr>
+<tr>
+<td><span class=Keyword>
+&lt;con&gt;</span></td>
+<td>Any 8-, 16-, or 32-bit constant</tr>
+</table>
+</blockquote>
+<h3>Data Movement Instructions</h3>
+<b><span class=Keyword>mov</span></b> — Move (Opcodes: 88, 89, 8A,
+8B, 8C, 8E, ...)
+<blockquote>
+The <span class=Keyword>mov</span> instruction copies the data item referred to by
+its second operand (i.e. register contents, memory contents, or a constant
+value) into the location referred to by its first operand (i.e. a register or
+memory). While register-to-register moves are possible, direct memory-to-memory
+moves are not. In cases where memory transfers are desired, the source memory
+contents must first be loaded into a register, then can be stored to the
+destination memory address.<p></p>
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>mov &lt;reg&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>mov &lt;reg&gt;,&lt;mem&gt;</span><br>
+<span class=Keyword>mov &lt;mem&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>mov &lt;reg&gt;,&lt;const&gt;</span><br>
+<span class=Keyword>mov &lt;mem&gt;,&lt;const&gt;</span><br>
+<p>
+<em>Examples</em><br>
+<span class=Keyword>mov eax, ebx</span> — copy the value in ebx into eax<br>
+<span class=Keyword>mov byte ptr [var], 5</span> — store the value 5 into the
+byte at location var<br>
+</p></blockquote>
+<p class=page></p>
+<span class=Keyword><b>push</b></span> — Push stack (Opcodes:
+FF, 89, 8A, 8B, 8C, 8E, ...)
+<blockquote>
+The <span class=keyword>push</span> instruction places its operand onto
+the top of the hardware supported stack in memory. Specifically, <span class=Keyword>push</span> first decrements ESP by 4, then places its
+operand into the contents of the 32-bit location at address [ESP]. ESP
+(the stack pointer) is decremented by push since the x86 stack grows
+down - i.e. the stack grows from high addresses to lower addresses.
+<p></p>
+<em>Syntax</em><br>
+<span class=Keyword>push &lt;reg32&gt;</span><br>
+<span class=Keyword>push &lt;mem&gt;</span><br>
+<span class=Keyword>push &lt;con32&gt;</span>
+<p>
+<em>Examples</em><br>
+<span class=Keyword>push eax</span> — push eax on the stack<br>
+<span class=Keyword>push [var]</span> — push the 4 bytes at
+address <em>var</em> onto the stack</p>
+</blockquote>
+<span class=Keyword><b>pop</b></span> — Pop stack
+<blockquote>
+The <span class=Keyword>pop</span> instruction removes the 4-byte data
+element from the top of the hardware-supported stack into the specified
+operand (i.e. register or memory location). It first moves the 4 bytes
+located at memory location <span class=Keyword>[SP]</span> into the
+specified register or memory location, and then increments <span class=Keyword>SP</span> by 4.
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>pop &lt;reg32&gt;</span><br>
+<span class=Keyword>pop &lt;mem&gt;</span>
+<p></p>
+<em>Examples</em><br>
+<span class=Keyword>pop edi</span> — pop the top element of the stack into EDI.<br>
+<span class=Keyword>pop [ebx]</span> — pop the top element of the
+stack into memory at the four bytes starting at location EBX.
+</blockquote>
+<span class=Keyword><b>lea</b></span> — Load effective address
+<blockquote>
+The <span class=Keyword>lea</span> instruction places the <em>address</em> specified by its second operand
+into the register specified by its first operand. Note, the <em>contents</em> of the memory location are not
+loaded, only the effective address is computed and placed into the register.
+This is useful for obtaining a pointer into a memory region.<p></p>
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>lea &lt;reg32&gt;,&lt;mem&gt;
+</span><p>
+<em>Examples</em><br>
+<span class=Keyword>lea edi, [ebx+4*esi]</span> — the quantity EBX+4*ESI is placed in EDI.<br>
+<span class=Keyword>lea eax, [var]</span> — the value in <em>var</em> is placed in EAX.<br>
+<span class=Keyword>lea eax, [val]</span> — the value <em>val</em> is placed in EAX.
+</p></blockquote>
+<h3>Arithmetic and Logic Instructions</h3>
+<span class=Keyword><b>add</b></span> — Integer Addition 
+<blockquote>
+The <span class=Keyword>add</span> instruction adds
+together its two operands, storing the result in its first
+operand. Note, whereas both operands may be registers, at most one
+operand may be a memory location.
+<p></p>
+<em>Syntax</em><br>
+<span class=Keyword>add &lt;reg&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>add &lt;reg&gt;,&lt;mem&gt;</span><br>
+<span class=Keyword>add &lt;mem&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>add &lt;reg&gt;,&lt;con&gt;</span><br>
+<span class=Keyword>add &lt;mem&gt;,&lt;con&gt;</span><br>
+<p></p>
+<em>Examples</em><br>
+<span class=Keyword>add eax, 10</span> — EAX ← EAX + 10<br>
+<span class=Keyword>add BYTE PTR [var], 10</span> — add 10 to the
+single byte stored at memory address var
+</blockquote>
+<span class=Keyword><b>sub</b></span> — Integer Subtraction
+<blockquote>
+The <span class=Keyword>sub</span> instruction stores in the value of
+its first operand the result of subtracting the value of its second
+operand from the value of its first operand. As with <span class=Keyword>add<p></p>
+<em>Syntax</em><br>
+<span class=Keyword>sub &lt;reg&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>sub &lt;reg&gt;,&lt;mem&gt;</span><br>
+<span class=Keyword>sub &lt;mem&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>sub &lt;reg&gt;,&lt;con&gt;</span><br>
+<span class=Keyword>sub &lt;mem&gt;,&lt;con&gt;</span><br>
+<p></p>
+<em>Examples</em><br>
+<span class=Keyword>sub al, ah</span> — AL ← AL - AH<br>
+<span class=Keyword>sub eax, 216</span> — subtract 216 from the
+value stored in EAX
+</span></blockquote>
+<span class=Keyword><b>inc, dec</b></span> — Increment, Decrement
+<blockquote>
+The <span class=Keyword>inc</span> instruction increments
+the contents of its operand by one. The <span class=Keyword>dec</span>
+instruction decrements the contents of its operand by one.<p></p>
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>inc &lt;reg&gt;</span><br>
+<span class=Keyword>inc &lt;mem&gt;</span><br>
+<span class=Keyword>dec &lt;reg&gt;</span><br>
+<span class=Keyword>dec &lt;mem&gt;</span>
+<p>
+<em>Examples</em><br>
+<span class=Keyword>dec eax</span> — subtract one from the contents of EAX.<br>
+<span class=Keyword>inc DWORD PTR [var]</span> — add one to the
+32-bit integer stored at location <em>var</em>
+</p></blockquote>
+<span class=Keyword><b>imul</b></span> — Integer Multiplication
+<blockquote>
+The <span class=Keyword>imul</span> instruction has two basic formats:
+two-operand (first two syntax listings above) and three-operand (last
+two syntax listings above).
+<p></p>
+The two-operand form multiplies its two operands together and stores the result
+in the first operand. The result (i.e. first) operand must be a
+register.
+<p></p>
+The three operand form multiplies its second and third operands together
+and stores the result in its first operand. Again, the result operand
+must be a register. Furthermore, the third operand is restricted to
+being a constant value.
+<p></p>
+<em>Syntax</em><br>
+<span class=Keyword>imul &lt;reg32&gt;,&lt;reg32&gt;</span><br>
+<span class=Keyword>imul &lt;reg32&gt;,&lt;mem&gt;</span><br>
+<span class=Keyword>imul &lt;reg32&gt;,&lt;reg32&gt;,&lt;con&gt;</span><br>
+<span class=Keyword>imul &lt;reg32&gt;,&lt;mem&gt;,&lt;con&gt;</span>
+<p>
+<em>Examples</em><br>
+<div class=hanging>
+<span class=Keyword>imul eax, [var]</span> — multiply the contents
+of EAX by the 32-bit contents of the memory location <em>var</em>. Store
+the result in EAX.
+</div>
+<div class=hanging>
+<span class=Keyword>imul esi, edi, 25</span> — ESI → EDI * 25
+</div>
+</blockquote>
+<span class=Keyword><b>idiv</b></span> — Integer Division
+<blockquote>
+The <span class=Keyword>idiv</span> instruction divides the
+contents of the 64 bit integer EDX:EAX (constructed by viewing EDX as
+the most significant four bytes and EAX as the least significant four
+bytes) by the specified operand value. The quotient result of the
+division is stored into EAX, while the remainder is placed in EDX.
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>idiv &lt;reg32&gt;</span><br>
+<span class=Keyword>idiv &lt;mem&gt;</span>
+<p>
+<em>Examples</em>
+<div class=hanging>
+<span class=Keyword>idiv ebx</span> — divide the contents of
+EDX:EAX by the contents of EBX. Place the quotient in EAX and the
+remainder in EDX.</div>
+<div class=hanging><span class=Keyword>idiv DWORD PTR [var]</span> — divide the
+contents of EDX:EAX by the 32-bit value stored at memory location
+<em>var</em>. Place the quotient in EAX and the remainder in EDX.</div>
+</blockquote>
+<span class=Keyword><b>and, or, xor</b></span> — Bitwise logical
+and, or and exclusive or
+<blockquote>
+These instructions perform the specified logical operation (logical
+bitwise and, or, and exclusive or, respectively) on their operands, placing the
+result in the first operand location.
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>and &lt;reg&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>and &lt;reg&gt;,&lt;mem&gt;</span><br>
+<span class=Keyword>and &lt;mem&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>and &lt;reg&gt;,&lt;con&gt;</span><br>
+<span class=Keyword>and &lt;mem&gt;,&lt;con&gt;</span><br>
+<p>
+<span class=Keyword>or &lt;reg&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>or &lt;reg&gt;,&lt;mem&gt;</span><br>
+<span class=Keyword>or &lt;mem&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>or &lt;reg&gt;,&lt;con&gt;</span><br>
+<span class=Keyword>or &lt;mem&gt;,&lt;con&gt;</span><br>
+<p>
+<span class=Keyword>xor &lt;reg&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>xor &lt;reg&gt;,&lt;mem&gt;</span><br>
+<span class=Keyword>xor &lt;mem&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>xor &lt;reg&gt;,&lt;con&gt;</span><br>
+<span class=Keyword>xor &lt;mem&gt;,&lt;con&gt;</span><br>
+<p>
+<em>Examples</em><br>
+<span class=Keyword>and eax, 0fH</span> — clear all but the last 4
+bits of EAX.<br>
+<span class=Keyword>xor edx, edx</span> — set the contents of EDX
+to zero.
+</p></blockquote>
+<span class=Keyword><b>not</b></span> — Bitwise Logical Not
+<blockquote>
+Logically negates the operand contents (that is, flips all bit values in
+the operand). 
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>not &lt;reg&gt;</span><br>
+<span class=Keyword>not &lt;mem&gt;</span>
+<p>
+<em>Example</em><br>
+<span class=Keyword>not BYTE PTR [var]</span> — negate all bits in the byte
+at the memory location <em>var</em>.
+</p></blockquote>
+<p class=page></p>
+<span class=Keyword><b>neg</b></span> — Negate
+<blockquote>
+Performs the two's complement negation of the operand contents.
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>neg &lt;reg&gt;</span><br>
+<span class=Keyword>neg &lt;mem&gt;</span>
+<p>
+<em>Example</em><br>
+<span class=Keyword>neg eax</span> — EAX → - EAX
+</p></blockquote>
+<span class=Keyword><b>shl, shr</b></span> — Shift Left, Shift
+Right
+<blockquote>
+These instructions shift the bits in their first operand's contents
+left and right, padding the resulting empty bit
+positions with zeros. The shifted operand can be shifted up to 31 places. The
+number of bits to shift is specified by the second operand, which can be
+either an 8-bit constant or the register CL. In either case, shifts counts of
+greater then 31 are performed modulo 32.
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>shl &lt;reg&gt;,&lt;con8&gt;</span><br>
+<span class=Keyword>shl &lt;mem&gt;,&lt;con8&gt;</span><br>
+<span class=Keyword>shl &lt;reg&gt;,&lt;cl&gt;</span><br>
+<span class=Keyword>shl &lt;mem&gt;,&lt;cl&gt;</span>
+<p>
+<span class=Keyword>shr &lt;reg&gt;,&lt;con8&gt;</span><br>
+<span class=Keyword>shr &lt;mem&gt;,&lt;con8&gt;</span><br>
+<span class=Keyword>shr &lt;reg&gt;,&lt;cl&gt;</span><br>
+<span class=Keyword>shr &lt;mem&gt;,&lt;cl&gt;</span>
+<p>
+<em>Examples</em><br>
+<div class=hanging><span class=Keyword>shl eax, 1</span> — Multiply the value of EAX
+by 2 (if the most significant bit is 0)</div>
+<div class=hanging><span class=Keyword>shr ebx, cl</span> — Store in EBX the floor of result of dividing the value of EBX
+by 2<sup><em>n</em></sup> where<em>n</em> is the value in CL.</div>
+</blockquote>
+<h3>Control Flow Instructions</h3>
+The x86 processor maintains an instruction pointer (IP) register that is
+a 32-bit value indicating the location in memory where the current
+instruction starts. Normally, it increments to point to the next
+instruction in memory begins after execution an instruction. The IP
+register cannot be manipulated directly, but is updated implicitly by
+provided control flow instructions.
+ <p>
+We use the notation <span class=Keyword>&lt;label&gt;</span> to refer to
+labeled locations in the program text. Labels can be inserted anywhere
+in x86 assembly code text by entering a label 
+name followed by a colon. For example,
+<blockquote>
+<pre>       mov esi, [ebp+8]
+begin: xor ecx, ecx
+       mov eax, [esi]
+</pre>
+</blockquote>
+The second instruction in this code fragment is labeled <span class=Keyword>begin</span>. Elsewhere in the code, we can refer to the
+memory location that this instruction is located at in memory using the
+more convenient symbolic name <span class=Keyword>begin</span>. This
+label is just a convenient way of expressing the location instead of its
+32-bit value.
+<p>
+<span class=Keyword><b>jmp</b></span> — Jump
+<blockquote>
+Transfers program control flow to the instruction at the memory
+location indicated by the operand. 
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>jmp &lt;label&gt;</span>
+<p>
+<em>Example</em><br>
+<span class=Keyword>jmp begin</span> — Jump to the instruction
+labeled <span class=Keyword>begin</span>.
+</p></blockquote>
+<span class=Keyword><b>j<em>condition</em></b></span> —
+Conditional Jump
+<blockquote>
+These instructions are conditional jumps that are based on the status of
+a set of condition codes that are stored in a special register called
+the <em>machine status word</em>. The contents of the machine status
+word include information about the last arithmetic operation
+performed. For example, one bit of this word indicates if the last
+result was zero. Another indicates if the last result was
+negative. Based on these condition codes, a number of conditional jumps
+can be performed. For example, the <span class=Keyword>jz</span>
+instruction performs a jump to the specified operand label if the result
+of the last arithmetic operation was zero. Otherwise, control proceeds
+to the next instruction in sequence. 
+<p>
+A number of the conditional branches are given names that are
+intuitively based on the last operation performed being a special
+compare instruction, <span class=Keyword>cmp</span> (see below). For example, conditional branches
+such as <span class=Keyword>jle</span> and <span class=Keyword>jne</span> are based on first performing a cmp operation
+on the desired operands. 
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>je &lt;label&gt;</span> (jump when equal)<br>
+<span class=Keyword>jne &lt;label&gt;</span> (jump when not equal)<br>
+<span class=Keyword>jz &lt;label&gt;</span> (jump when last result was zero)<br>
+<span class=Keyword>jg &lt;label&gt;</span> (jump when greater than)<br>
+<span class=Keyword>jge &lt;label&gt;</span> (jump when greater than or equal to)<br>
+<span class=Keyword>jl &lt;label&gt;</span> (jump when less than)<br>
+<span class=Keyword>jle &lt;label&gt;</span> (jump when less than or equal to)
+<p>
+<em>Example</em><br>
+<span class=Keyword>cmp eax, ebx<br>
+jle done</span>
+<div class=explanation>
+If the contents of EAX are less than or equal to the contents of EBX,
+jump to the label <em>done</em>. Otherwise, continue to the next
+instruction.
+</div>
+</blockquote>
+<span class=Keyword><b>cmp</b></span> — Compare
+<blockquote>
+Compare the values of the two specified operands, setting the condition
+codes in the machine status word appropriately. This instruction is 
+equivalent to the <span class=Keyword>sub</span> instruction, except the
+result of the subtraction is discarded instead of replacing the first
+operand.
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>cmp &lt;reg&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>cmp &lt;reg&gt;,&lt;mem&gt;</span><br>
+<span class=Keyword>cmp &lt;mem&gt;,&lt;reg&gt;</span><br>
+<span class=Keyword>cmp &lt;reg&gt;,&lt;con&gt;</span>
+<p>
+<em>Example</em><br>
+<span class=Keyword>cmp DWORD PTR [var], 10<br>
+jeq loop</span>
+<div class=explanation>
+If the 4 bytes stored at location <em>var</em> are equal to the 4-byte
+integer constant 10, jump to the location labeled <em>loop</em>.
+</div>
+</blockquote>
+<span class=Keyword><b>call</b>, <b>ret</b></span> — Subroutine
+call and return
+<blockquote>
+These instructions implement a subroutine call and return.
+The <span class=Keyword>call</span> instruction first pushes the current
+code location onto the hardware supported stack in memory (see the <span class=Keyword>push</span> instruction for details), and then performs
+an unconditional jump to the code location indicated by the label
+operand. Unlike the simple jump instructions, the <span class=Keyword>call</span> instruction saves the location to return to
+when the subroutine completes. 
+<p>
+The <span class=Keyword>ret</span> instruction implements a subroutine
+return mechanism. This instruction first pops a code location off the
+hardware supported in-memory stack (see the <span class=Keyword>pop</span> instruction for details). It then performs an
+unconditional jump to the retrieved code location.
+<p>
+<em>Syntax</em><br>
+<span class=Keyword>call &lt;label&gt;</span><br>
+<span class=Keyword>ret</span>
+</p></blockquote>
+<h2><a name=calling></a>Calling Convention</h2>
+To allow separate programmers to share code and develop libraries for
+use by many programs, and to simplify the use of subroutines in general,
+programmers typically adopt a common <em>calling convention</em>. The
+calling convention is a protocol about how to call and return from
+routines. For example, given a set of calling convention rules, a
+programmer need not examine the definition of a subroutine to determine
+how parameters should be passed to that subroutine. Furthermore, given a
+set of calling convention rules, high-level language compilers can be
+made to follow the rules, thus allowing hand-coded assembly language
+routines and high-level language routines to call one another. <p></p>
+In practice, many calling conventions are possible. We will use the
+widely used C language calling convention. Following this convention
+will allow you to write assembly language subroutines that are safely
+callable from C (and C++) code, and will also enable you to call C
+library functions from your assembly language code.
+<p></p> 
+The C calling convention is based heavily on the use of the
+hardware-supported stack. It is based on the <span class=Keyword>push</span>, <span class=Keyword>pop</span>, <span class=Keyword>call</span>, and <span class=Keyword>ret</span>
+instructions. Subroutine parameters are passed on the stack. Registers
+are saved on the stack, and local variables used by subroutines are
+placed in memory on the stack. The vast majority of high-level
+procedural languages implemented on most processors have used similar
+calling conventions. 
+<p></p>
+The calling convention is broken into two sets of rules. The first set
+of rules is employed by the caller of the subroutine, and the second set
+of rules is observed by the writer of the subroutine (the callee). It
+should be emphasized that mistakes in the observance of these rules
+quickly result in fatal program errors since the stack will be left in
+an inconsistent state; thus meticulous care should be used when
+implementing the call convention in your own subroutines.
+<p class=page></p>
+<center>
+<a href=https://www.cs.virginia.edu/~evans/cs216/guides/stack-convention.png><img src="data:image/png;base64,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" width=500>&gt;</a><br>
+<b>Stack during Subroutine Call</b> <br><font color=#444 size=-1>[Thanks to 
+Maxence Faldor for providing a correct figure and to James Peterson for finding and fixing the bug in
+the original version of this figure!]</font>
+</center>
+<p>
+A good way to visualize the operation of the calling convention is to
+draw the contents of the nearby region of the stack during subroutine
+execution. The image above depicts the contents of the stack during the
+execution of a subroutine with three parameters and three local
+variables. The cells depicted in the stack
+are 32-bit wide memory locations, thus the memory addresses of the cells
+are 4 bytes apart. The first
+parameter resides at an offset of 8 bytes from the base pointer. Above
+the parameters on the stack (and below the base pointer), the <span class=Keyword>call</span> instruction placed the return address, thus
+leading to an extra 4 bytes of offset from the base pointer to the first
+parameter. When the <span class=Keyword>ret</span> instruction is used
+to return from the subroutine, it will jump to the return address stored
+on the stack.
+<h4>Caller Rules</h4>
+To make a subrouting call, the caller should:
+<ol>
+<li> Before calling a subroutine, the caller should
+save the contents of certain registers that are designated
+<em>caller-saved</em>. The caller-saved registers are EAX, ECX, EDX.
+Since the called subroutine is allowed to modify these registers, if the
+caller relies on their values after the subroutine returns, the caller
+must push the values in these registers onto the stack (so they can be
+restore after the subroutine returns.
+<li> To pass parameters to the subroutine, push them onto the stack
+before the call. The parameters should be pushed in inverted order
+(i.e. last parameter first). Since the stack grows down, the first 
+parameter will be stored at the lowest address (this inversion of
+parameters was historically used to allow functions to be passed a
+variable number of parameters).
+<li> To call the subroutine, use the <span class=Keyword>call</span>
+instruction. This instruction places the return address on top of the
+parameters on the stack, and branches to the subroutine code. This
+invokes the subroutine, which should follow the callee rules below.
+</ol>
+After the subroutine returns (immediately following the <span class=Keyword>call</span> instruction), the caller can expect to find
+the return value of the subroutine in the register EAX. To restore the
+machine state, the caller should:
+<ol>
+<li> Remove the parameters from stack. This restores the stack to its
+state before the call was performed.
+<li> Restore the contents of caller-saved registers (EAX, ECX, EDX) by
+popping them off of the stack. The caller can assume that no other
+registers were modified by the subroutine. 
+</ol>
+<b>Example</b>
+<br>
+The code below shows a function call that follows the caller rules. The
+caller is calling a function <em>_myFunc</em> that takes three integer
+parameters. First parameter is in EAX, the second parameter is the
+constant 216; the third parameter is in memory location <em>var</em>.
+<blockquote>
+<pre>push [var] ; Push last parameter first
+push 216   ; Push the second parameter
+push eax   ; Push first parameter last
+
+call _myFunc ; Call the function (assume C naming)
+
+add esp, 12
+</pre>
+</blockquote>
+Note that after the call returns, the caller cleans up the stack using
+the <span class=Keyword>add</span> instruction. We have 12 bytes (3
+parameters * 4 bytes each) on the stack, and the stack grows down. Thus,
+to get rid of the parameters, we can simply add 12 to the stack pointer.
+<p>
+The result produced by <em>_myFunc</em> is now available for use in the
+register EAX. The values of the caller-saved registers (ECX and EDX),
+may have been changed. If the caller uses them after the call, it would
+have needed to save them on the stack before the call and restore them
+after it.
+<h4>Callee Rules</h4>
+The definition of the subroutine should adhere to the following rules at
+the beginning of the subroutine:
+<ol>
+<li> Push the value of EBP onto the stack, and then copy the value of ESP
+into EBP using the following instructions:
+<pre>    push ebp
+    mov  ebp, esp
+</pre>
+This initial action maintains the <em>base pointer</em>, EBP. The base
+pointer is used by convention as a point of reference for finding
+parameters and local variables on the stack. When a subroutine is
+executing, the base pointer holds a copy of the stack pointer value from
+when the subroutine started executing. Parameters and local variables
+will always be located at known, constant offsets away from the base
+pointer value. We push the old base pointer value at the beginning of
+the subroutine so that we can later restore the appropriate base pointer
+value for the caller when the subroutine returns. Remember, the caller
+is not expecting the subroutine to change the value of the base
+pointer. We then move the stack pointer into EBP to obtain our point of
+reference for accessing parameters and local variables. 
+<li> Next, allocate local variables by making space on the
+stack. Recall, the stack grows down, so to make space on the top of the 
+stack, the stack pointer should be decremented. The amount by which the stack
+pointer is decremented depends on the number and size of local variables
+needed. For example, if 3 local integers (4 bytes each) were required,
+the stack pointer would need to be decremented by 12 to make space for
+these local variables (i.e., <span class=Keyword>sub&nbsp;esp,&nbsp;12</span>).
+As with parameters, local variables will be located at known offsets
+from the base pointer.<p></p> 
+<li> Next, save the values of the <em>callee-saved</em> registers that
+will be used by the function. To save registers, push them onto the
+stack. The callee-saved registers are EBX, EDI, and ESI (ESP and EBP
+will also be preserved by the calling convention, but need not be pushed
+on the stack during this step).
+</ol>
+After these three actions are performed, the body of the
+subroutine may proceed. When the subroutine is returns, it must follow
+these steps:
+<ol>
+<li> Leave the return value in EAX.<p></p>
+<li> Restore the old values of any callee-saved registers (EDI and ESI)
+that were modified. The register contents are restored by popping them
+from the stack. The registers should be popped in the inverse
+order that they were pushed.
+<li> Deallocate local variables. The obvious way to do this might be to
+add the appropriate value to the stack pointer (since the space was
+allocated by subtracting the needed amount from the stack pointer). In
+practice, a less error-prone way to deallocate the variables is to 
+move the value in the base pointer into the stack pointer: <span class=Keyword>mov&nbsp;esp,&nbsp;ebp</span>. This works because the
+base pointer always contains the value that the stack pointer contained immediately
+prior to the allocation of the local variables.
+<li> Immediately before returning, restore the caller's base pointer
+value by popping EBP off the stack. Recall that the first thing we did on
+entry to the subroutine was to push the base pointer to save its old
+value.
+<li> Finally, return to the caller by executing a <span class=Keyword>ret</span> instruction. This instruction will find and
+remove the appropriate return address from the stack.
+</ol>
+Note that the callee's rules fall cleanly into two halves that are
+basically mirror images of one another. The first half of the rules
+apply to the beginning of the function, and are commonly said
+to define the <em>prologue</em> to the function. The latter half of the
+rules apply to the end of the function, and are thus commonly said to
+define the <em>epilogue</em> of the function.<p></p>
+<b>Example</b><br>
+Here is an example function definition that follows the callee rules:
+<blockquote>
+<pre>.486
+.MODEL FLAT
+.CODE
+PUBLIC _myFunc
+_myFunc PROC
+  ; Subroutine Prologue
+  push ebp     ; Save the old base pointer value.
+  mov ebp, esp ; Set the new base pointer value.
+  sub esp, 4   ; Make room for one 4-byte local variable.
+  push edi     ; Save the values of registers that the function
+  push esi     ; will modify. This function uses EDI and ESI.
+  ; (no need to save EBX, EBP, or ESP)
+
+  ; Subroutine Body
+  mov eax, [ebp+8]   ; Move value of parameter 1 into EAX
+  mov esi, [ebp+12]  ; Move value of parameter 2 into ESI
+  mov edi, [ebp+16]  ; Move value of parameter 3 into EDI
+
+  mov [ebp-4], edi   ; Move EDI into the local variable
+  add [ebp-4], esi   ; Add ESI into the local variable
+  add eax, [ebp-4]   ; Add the contents of the local variable
+                     ; into EAX (final result)
+
+  ; Subroutine Epilogue 
+  pop esi      ; Recover register values
+  pop  edi
+  mov esp, ebp ; Deallocate local variables
+  pop ebp ; Restore the caller's base pointer value
+  ret
+_myFunc ENDP
+END
+</pre>
+</blockquote>
+The subroutine prologue performs the standard actions of saving a
+snapshot of the stack pointer in EBP (the base pointer), allocating
+local variables by decrementing the stack pointer, and saving register
+values on the stack.
+<p>
+In the body of the subroutine we can see the use of the base
+pointer. Both parameters and local variables are located at constant
+offsets from the base pointer for the duration of the subroutines
+execution. In particular, we notice that since parameters were placed
+onto the stack before the subroutine was called, they are always located
+below the base pointer (i.e. at higher addresses) on the stack. The
+first parameter to the subroutine can always be found at memory location
+EBP + 8, the second at EBP + 12, the third at EBP + 16. Similarly,
+since local variables are allocated after the base pointer is set, they
+always reside above the base pointer (i.e. at lower addresses) on the
+stack. In particular, the first local variable is always located at
+EBP - 4, the second at EBP - 8, and so on. This conventional use of the
+base pointer allows us to quickly identify the use of local variables
+and parameters within a function body.
+<p></p>
+The function epilogue is basically a mirror image of the function
+prologue. The caller's register values are recovered from the stack,
+the local variables are deallocated by resetting the stack pointer, the
+caller's base pointer value is recovered, and the ret instruction is
+used to return to the appropriate code location in the caller.
+<p>
+</p>
+<h4>Using these Materials</h4>
+These materials are released under a 
+<a href=https://creativecommons.org/licenses/by-nc-sa/3.0/us/>Creative
+ Commons Attribution-Noncommercial-Share Alike 3.0 United States
+ License</a>. We are delighted when people want to use or adapt the
+ course materials we developed, and you are welcome to reuse and adapt
+ these materials for any non-commercial purposes (if you would like to
+ use them for a commercial purpose, please
+ contact <a href=http://www.cs.virginia.edu/evans/>David Evans</a>
+ for more information).
+If you do adapt or use these materials, please include a credit like
+<em>"Adapted from materials developed for University of Virginia cs216 by
+David Evans. This guide was revised for cs216 by David Evans, based on
+materials originally created by Adam Ferrari many years ago, and since
+updated by Alan Batson, Mike Lack, and Anita Jones."</em> and a link back to
+this page.
+<hr style=height:.5em;background-color:#c00;padding:0>
+<table border=0 rules=none bgcolor=white width=100% align=center cellpadding=6 cellspacing=2>
+<tbody><tr>
+<td valign=bottom>
+<font size=-1>
+<a href=http://www.cs.virginia.edu/evans/cs216/><b>CS216: Program and Data Representation</b></a><br>
+<a href=http://www.cs.virginia.edu/>University of Virginia</a><br>
+</font></td>
+<td align=right valign=bottom width=25%>
+<font size=-1>
+<a href=http://www.cs.virginia.edu/evans/>David Evans</a><br>
+<a href=mailto:evans@cs.virginia.edu><em>evans@cs.virginia.edu</em></a><br>
+<font size=-2><a href=http://www.cs.virginia.edu/evans/cs216/reuse.html>Using these Materials</a></font>
+</font>
+</td>
+</tr>
+</table>
+</div>

@@ -1,0 +1,14 @@
+size 12: 12 10 11 9 8 6 7 1 2 3 4 5
+pop 12
+pop 11
+pop 10
+pop 9
+pop 8
+pop 7
+pop 6
+pop 5
+pop 4
+pop 3
+pop 2
+pop 1
+size 0:

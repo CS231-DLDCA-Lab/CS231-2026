@@ -1,0 +1,14 @@
+push 7
+show
+push 6
+show
+push 5
+show
+push 4
+show
+push 3
+show
+push 2
+show
+push 1
+show

@@ -1,0 +1,13 @@
+push 9
+push 8
+push 1
+push 0
+show
+pop
+show
+pop
+show
+pop
+show
+pop
+show

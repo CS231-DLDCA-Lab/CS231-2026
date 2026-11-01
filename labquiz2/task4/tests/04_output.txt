@@ -1,0 +1,7 @@
+size 1: 7
+size 2: 7 6
+size 3: 7 6 5
+size 4: 7 6 5 4
+size 5: 7 6 5 4 3
+size 6: 7 6 5 4 3 2
+size 7: 7 6 5 4 3 2 1
