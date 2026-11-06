@@ -1,0 +1,88 @@
+TASKS = $(patsubst %/,%,$(wildcard */))
+TASKS_VVP = $(patsubst %,%.vvp,$(TASKS))
+TASKS_VCD = $(patsubst %,%.vcd,$(TASKS))
+
+.PHONY: all clean
+
+default:
+	@printf "Usage: make [task]\n"
+
+$(TASKS): %: %.vcd
+	@code $^
+
+$(TASKS_VCD): %.vcd: %.vvp
+	@vvp $^
+
+.SECONDEXPANSION:
+
+get_v_files = $(filter-out $(patsubst %_solution.v,%.v,$(wildcard $1/*_solution.v)),$(wildcard $1/*.v))
+
+$(TASKS_VVP): %.vvp: $$(call get_v_files,$$*)
+	iverilog $^ -o $@
+
+clean:
+	@rm -fv $(TASKS_VVP) $(TASKS_VCD)
+
+ifdef tasks
+
+# 1. Run find at build time in Make's environment
+FOUND_FILES := $(shell find -L $(addprefix ./,$(tasks)) \
+	\( -type d -iname '*solution*' -prune \) -o \
+	\( -type f -o -type l \) \
+	! \( -iname '*.tex' -o -iname '*.sty' \) \
+	! -iname '*solution*' )
+
+# 2. Store the script template in a clean multiline variable
+define SCRIPT_CONTENT
+#!/usr/bin/env bash
+set -e
+
+RED=$$(printf '\033[31m')
+GREEN=$$(printf '\033[32m')
+NC=$$(printf '\033[0m')
+
+read -rp "Enter Student Roll Number: " ROLL_NO
+if [ -z "$$ROLL_NO" ]; then
+    printf "$${RED}Error: Roll number cannot be empty.$${NC}\n" >&2
+    exit 1
+fi
+
+# Validate Roll Number against allowed range (901 to 1100)
+VALID_PATTERN="^(210050102|23b0919|24b1017|24b1068|25b(090[1-9]|09[1-9][0-9]|10[0-9][0-9]|1100))$$"
+
+if ! echo "$$ROLL_NO" | grep -qE "$$VALID_PATTERN" ; then
+    printf "$${RED}Error: Invalid student ID. Please check the ID and try again.$${NC}\n" >&2
+    exit 1
+fi
+
+mkdir -p "$$ROLL_NO"
+
+FILES=($(FOUND_FILES))
+
+echo "Packaging assignment files..."
+for file in "$${FILES[@]}"; do
+    if [ -e "$$file" ] || [ -L "$$file" ]; then
+        mkdir -p "$$ROLL_NO/$$(dirname "$$file")"
+        cp -RP "$$file" "$$ROLL_NO/$$file"
+        printf "  $${GREEN}[+] Copied:$${NC} %s\n" "$$file"
+    else
+        printf "$${RED}Error: Required file or symlink missing: %s$${NC}\n" "$$file" >&2
+        rm -rf "$$ROLL_NO"
+        exit 1
+    fi
+done
+
+tar -czf "$${ROLL_NO}.tar.gz" "$$ROLL_NO"
+rm -rf "$$ROLL_NO"
+printf "$${GREEN}Successfully created $${ROLL_NO}.tar.gz$${NC}\n"
+endef
+
+export SCRIPT_CONTENT
+
+.PHONY: build_archive.sh
+# 3. Generate target without escaping issues
+build_archive.sh:
+	@printf '%s\n' "$$SCRIPT_CONTENT" > build_archive.sh
+	@chmod +x build_archive.sh
+
+endif
