@@ -1,0 +1,79 @@
+--- a/inc/block.h
++++ b/inc/block.h
+@@ -45,6 +45,8 @@
+   std::vector<MemoryRequestProducer*> to_return;
+ 
+   uint8_t translation_level = 0, init_translation_level = 0;
++
++  bool dirty = false; // task3.patch 1: the line in this packet is dirty
+ };
+ 
+ template <>
+--- a/src/cache.cc
++++ b/src/cache.cc
+@@ -56,6 +56,7 @@
+     if (way != NUM_WAY) {
+       // update processed packets
+       fill_mshr->data = block[set * NUM_WAY + way].data;
++      fill_mshr->dirty = false; // task3.patch 2: this cache now holds the dirty copy, the level above gets a clean one
+ 
+       for (auto ret : fill_mshr->to_return)
+         ret->return_data(&(*fill_mshr));
+@@ -325,6 +326,7 @@
+       writeback_packet.instr_id = handle_pkt.instr_id;
+       writeback_packet.ip = 0;
+       writeback_packet.type = WRITEBACK;
++      writeback_packet.dirty = fill_block.dirty; // task3.patch 3: the victim's dirty bit goes down with it
+ 
+       auto result = lower_level->add_wq(&writeback_packet);
+       if (result == -2)
+@@ -344,7 +346,8 @@
+ 
+     fill_block.valid = true;
+     fill_block.prefetch = (handle_pkt.type == PREFETCH && handle_pkt.pf_origin_level == fill_level);
+-    fill_block.dirty = (handle_pkt.type == WRITEBACK || (handle_pkt.type == RFO && handle_pkt.to_return.empty()));
++    // task3.patch 4: the dirty bit comes from the packet (was: handle_pkt.type == WRITEBACK)
++    fill_block.dirty = (handle_pkt.dirty || (handle_pkt.type == RFO && handle_pkt.to_return.empty()));
+     fill_block.address = handle_pkt.address;
+     fill_block.v_address = handle_pkt.v_address;
+     fill_block.data = handle_pkt.data;
+@@ -671,6 +674,7 @@
+   // MSHR holds the most updated information about this request
+   mshr_entry->data = packet->data;
+   mshr_entry->pf_metadata = packet->pf_metadata;
++  mshr_entry->dirty = packet->dirty; // task3.patch 5: a response brings its dirty bit up
+   mshr_entry->event_cycle = current_cycle + (warmup_complete[cpu] ? FILL_LATENCY : 0);
+ 
+   DP(if (warmup_complete[packet->cpu]) {
+--- a/src/main.cc
++++ b/src/main.cc
+@@ -319,6 +319,21 @@
+   exit(1);
+ }
+ 
++// task3.patch 6: how many valid L2C lines also have a valid copy in the LLC (0 means the LLC is exclusive)
++extern CACHE LLC, cpu0_L2C;
++void print_exclusivity()
++{
++  uint64_t both = 0, valid = 0;
++  for (auto& b : cpu0_L2C.block) {
++    if (!b.valid)
++      continue;
++    valid++;
++    if (LLC.get_way(b.address, LLC.get_set(b.address)) < LLC.NUM_WAY)
++      both++;
++  }
++  cout << "L2C LINES ALSO IN LLC: " << both << " of " << valid << endl;
++}
++
+ int main(int argc, char** argv)
+ {
+   // interrupt signal hanlder
+@@ -505,6 +520,7 @@
+     }
+   }
+ 
++  print_exclusivity(); // task3.patch 7
+   cout << endl << "Region of Interest Statistics" << endl;
+   for (uint32_t i = 0; i < NUM_CPUS; i++) {
+     cout << endl << "CPU " << i << " cumulative IPC: " << ((float)ooo_cpu[i]->finish_sim_instr / ooo_cpu[i]->finish_sim_cycle);

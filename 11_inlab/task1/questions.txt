@@ -1,0 +1,43 @@
+Task 1: Make a Convolution Fast
+Write your answers below each question. Keep this file in task1/; it is part of your submission.
+
+Run every stage at the default size (H = W = 2048, K = 3, no arguments) with the perf
+command from the PDF:
+
+    EV=task-clock,cycles,instructions,branches,branch-misses
+    EV=$EV,L1-dcache-loads,L1-dcache-load-misses
+    perf stat -e $EV taskset -c 1 ./conv_<stage>.out
+
+For each question, name the counters that improved compared with conv_naive and give
+both values (naive -> stage). Then explain why the code change in that stage changes
+them. Also say whether the IPC went up or down.
+
+Q1. conv_naive -> conv_reorder
+
+Counters that improved:
+
+
+Why:
+
+
+Q2. conv_naive -> conv_simd
+
+Counters that improved:
+
+
+Why:
+
+
+Q3. conv_naive -> conv_unroll
+
+Counters that improved:
+
+
+Why:
+
+
+Q4. Across all three stages, which counters got worse (or did not improve) compared with
+    conv_naive, and why?
+
+Answer:
+
