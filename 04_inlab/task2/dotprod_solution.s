@@ -22,19 +22,13 @@ _start:
 ;   Find the dot product of vec1 and vec2 and put it in `rdi`    
     xor edi, edi
     xor ecx, ecx
-
-// ! note this was wrongly done in SL3 where I put the `cmp` check at the bottom.. why is that wrong?
 .for:
-    cmp rcx, vecsize
-    jge .done
-
-    mov rsi, [vec1 + 8*rcx]
-    imul rsi, [vec2 + 8*rcx]
+    mov rsi, qword [vec1+8*rcx]
+    imul rsi, qword [vec2+8*rcx]
     add rdi, rsi
-
     inc rcx
-    jmp .for
-
-.done:
+    cmp rcx, vecsize
+    jl .for
+    
     mov rax, 60
     syscall

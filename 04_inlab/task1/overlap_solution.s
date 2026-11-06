@@ -28,7 +28,6 @@ section .text
 
 _start:
 ; put 1 in rdi if rectangles overlap, 0 otherwise
-
     xor edi, edi
 
     mov rax, [rect_a.x1]
@@ -52,31 +51,3 @@ _start:
     mov rax, 60
     syscall
 
-    /* ALTERNATE SOLUTION using `set` to SET bytes and BITWISE AND them.
-    See in the pdf or online `set` syntax for x86.
-
-    mov rax, [rect_a.x1]
-    cmp rax, [rect_b.x2]
-    setl al                  ; a.x1 < b.x2
-
-    mov rcx, [rect_b.x1]
-    cmp rcx, [rect_a.x2]
-    setl cl                  ; b.x1 < a.x2
-
-    and al, cl
-
-    mov rcx, [rect_a.y1]
-    cmp rcx, [rect_b.y2]
-    setl cl
-    and al, cl
-
-    mov rcx, [rect_b.y1]
-    cmp rcx, [rect_a.y2]
-    setl cl
-    and al, cl
-
-    movzx edi, al            ; result = 0 or 1
-
-    mov eax, 60
-    syscall
-    */
