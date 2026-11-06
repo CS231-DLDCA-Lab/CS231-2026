@@ -8,6 +8,7 @@ section .data
         db 0,1,0,0,0,0
         db 0,0,0,0,0,0
         db 1,0,0,1,0,0
+    .end:
 
     ;; number of non-bomb cells with 0 neighboring bombs is 3 by default
 
