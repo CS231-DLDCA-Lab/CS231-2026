@@ -1,0 +1,150 @@
+DLDCA Outlab 10: answers to the questions in taskN/questions.txt
+
+Each answer is short. Other correct wordings got the same marks.
+
+
+Task 1 Q1. Why can SRRIP beat LRU? Give a trace.
+
+SRRIP inserts a new block at RRPV 2 and moves it to RRPV 0 only on a hit. A block
+used once stays near eviction, and a reused block is protected. LRU puts every new
+block at the most recently used position, so a stream of one-time blocks pushes out
+blocks that are reused.
+
+Take a 4-way set and this sequence:
+
+    a0 a1 a0 a1 s0 s1 s2 s3 a0 a1
+
+LRU: after s0 s1 the set is full. s2 evicts a0 and s3 evicts a1, because they are
+the least recently used. When a0 comes back the set holds s0 s1 s2 s3, so the
+last a0 and a1 both miss.
+
+SRRIP: a0 and a1 hit once, so they sit at RRPV 0. s0 and s1 enter at RRPV 2. On s2
+there is no block at RRPV 3, so every block ages by one. s0 and s1 reach 3 first,
+and s2 evicts s0. s3 evicts s1. The set holds a0 a1 s2 s3, so the last a0 and a1
+both hit.
+
+---
+
+Please note that the streaming hint was just an idea. You need some sets that  
+get reused while others are streamed; those reused blocks will be retained in SRRIP not LRU!
+
+
+Task 1 Q2. How did you handle writeback hits and writeback fills?
+
+A writeback hit leaves the RRPV unchanged, because a writeback is not a reuse.
+A writeback fill gets RRPV 3 (maxRRPV), so it is the first block to go.
+
+---
+
+Its that simple and the PS gives you the hint.
+
+
+Task 2 Q1. One table of 12288 counters in place of three tables of 4096.
+
+1. In sampler.h, set DBP_TABLES to 1 and DBP_ENTRIES to 12288, so there is one
+   vector of 12288 counters.
+2. Replace hash1, hash2 and hash3 with one hash that returns an index from 0 to
+   12287, for example by mixing the bits as before and taking the result mod 12288.
+3. predict_to_be_dead reads one counter, and update changes one counter, in place
+   of three.
+4. Rescale DBP_THRESHOLD. A 2-bit counter only goes up to 3, so "greater than 8" is
+   never true and no block is ever predicted dead. Use a threshold of 2 (dead only
+   at 3), or widen the counter and scale the threshold with it.
+
+The constructor and the code in cache.cc need no change, because they only call
+predict_to_be_dead and update.
+
+--- 
+
+This is one idea. Any other reasonable idea is marked correct as well.
+
+Task 3 Q1. Diff of task3/cache.cc and why each change is needed.
+
+The Task 2 hunks copied into this file are left out. These are the three Task 3
+changes, from make diff-task3.
+
+Change 1, in handle_fill: bypass the fill when the PC is predicted dead.
+
+    -    if (way == NUM_WAY)
+    +    if (NAME == "LLC" && !is_observer(set) && dp_predictor.predict_to_be_dead(signature(fill_mshr->ip)))
+    +      way = NUM_WAY;
+    +    else if (way == NUM_WAY)
+           way = impl_replacement_find_victim(...);
+
+Why: a dead block would only take space and push out a block that may be reused.
+Observer sets always fill, so the predictor keeps learning from them.
+
+Change 2, in handle_fill: return the data on a bypass too.
+
+    -    if (way != NUM_WAY) {
+    -      // update processed packets
+    +    // update processed packets
+    +    if (way != NUM_WAY)
+           fill_mshr->data = block[set * NUM_WAY + way].data;
+    -      for (auto ret : fill_mshr->to_return)
+    -        ret->return_data(&(*fill_mshr));
+    -    }
+    +    for (auto ret : fill_mshr->to_return)
+    +      ret->return_data(&(*fill_mshr));
+
+Why: the L2 and the MSHR are still waiting for this data. If the LLC does not
+return it, the load never completes and the simulator deadlocks.
+
+Change 3, in filllike_miss: skip the replacement update on a bypass.
+
+    -  impl_replacement_update_state(handle_pkt.cpu, set, way, ...);
+    +  if (!bypass)
+    +    impl_replacement_update_state(handle_pkt.cpu, set, way, ...);
+
+Why: a bypassed fill stores no block, so there is no valid way whose RRPV can be
+updated.
+
+---
+
+These reasons are one way to put it. An answer that explains what each change does,
+with some reason, is marked correct as well.
+
+
+Task 4 Q1. One eviction by hand.
+
+The set starts as A:1 B:0 C:2 D:1, and B's PC is predicted dead. E misses.
+
+(a) Plain SRRIP. No block is at RRPV 3, so all blocks age by one to A:2 B:1 C:3 D:2.
+C is the first block at 3, so C goes. E enters at RRPV 2 in way 2.
+
+    C
+    A:2 B:1 E:2 D:2
+
+(b) Task 4 policy. B is predicted dead, so B goes first, with no aging. E enters at
+RRPV 2 in way 1.
+
+    B
+    A:1 E:2 C:2 D:1
+
+
+Task 5 Q1. IPC table, long runs (20M warmup + 25M simulation).
+
+    COUNTER_BITS THRESHOLD   soplex IPC   mcf IPC
+    2            2           0.419710     0.370655
+    2            8           0.422070     0.379067
+    3            6           0.424286     0.376839
+    3            20          0.422638     0.381887
+    4            14          0.422492     0.377719
+    4            44          0.421961     0.385136
+
+
+Task 5 Q2. Fastest setting and trend.
+
+soplex is fastest at (3, 6) and mcf is fastest at (4, 44).
+
+Trend: (2, 2) is the slowest on both traces. mcf gets faster as the threshold and
+the counter width go up. soplex barely changes (0.4197 to 0.4243).
+
+Stating the trend was enough for full marks. The reason is below for reference.
+
+A low threshold calls a PC dead quickly, so more blocks get bypassed or evicted
+early. About 40% of mcf's blocks are reused, so some of those blocks were still
+needed, and mcf misses more (MPKI 14.0 at (2, 2), 12.6 at (4, 44)). A high
+threshold with wider counters waits for more dead evictions before it calls a PC
+dead, so it makes fewer wrong calls. About 90% of soplex's blocks are dead, so
+bypassing them costs little and any setting does about as well.

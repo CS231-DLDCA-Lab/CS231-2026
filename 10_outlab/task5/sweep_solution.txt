@@ -1,0 +1,18 @@
+Task 5 reference (grading key, not shipped). Task 4 solution, long runs (20M + 25M), IPC.
+make task5 long=1 trace=<trace> COUNTER_BITS=<b> THRESHOLD=<t>
+
+COUNTER_BITS THRESHOLD   soplex    mcf
+2            2         0.419710  0.370655
+2            8         0.422070  0.379067   (Task 4 default)
+3            6         0.424286  0.376839
+3            20        0.422638  0.381887
+4            14        0.422492  0.377719
+4            44        0.421961  0.385136
+
+Fastest: soplex 3/6 (0.4243), mcf 4/44 (0.3851).
+Trend: a low threshold (dead as soon as the counters lean dead) bypasses more blocks; it hurts
+mcf, whose predictor already calls live blocks dead (2/2 is the slowest on both traces).
+A high threshold with wider counters needs a longer run of dead evictions before a PC
+counts as dead (more hysteresis), so mcf gets steadily faster with width. soplex is
+nearly flat (0.420-0.4243): most of its blocks are dead, so any setting that bypasses
+them works, and only the most aggressive setting loses.
