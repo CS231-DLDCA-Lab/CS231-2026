@@ -1,0 +1,51 @@
+push -20
+push -3
+push 14
+push -10
+push 7
+push -17
+push 0
+push 17
+push -7
+push 10
+push -14
+push 3
+push 20
+push -4
+push 13
+push -11
+push 6
+push -18
+push -1
+push 16
+push -8
+push 9
+push -15
+push 2
+push 19
+push -5
+push 12
+push -12
+push 5
+push -19
+push -2
+push 15
+push -9
+push 8
+push -16
+push 1
+push 18
+push -6
+push 11
+push -13
+show
+rpop
+rpop
+rpop
+rpop
+rpop
+show
+push 50
+push -50
+push 0
+show

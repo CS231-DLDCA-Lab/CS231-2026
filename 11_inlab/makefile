@@ -63,9 +63,9 @@ default:
 
 # Task 1 is the native perf task: its own makefile in task1/.
 task1:
-	@$(MAKE) -C task1 all
+	@$(MAKE) -C task1 all SUFFIX=$(SUFFIX)
 check-task1:
-	@$(MAKE) -C task1 check
+	@$(MAKE) -C task1 check SUFFIX=$(SUFFIX)
 
 # build <policy> <source .cc>: install the source as that policy, set it at the LLC, compile
 define build

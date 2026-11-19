@@ -1,0 +1,92 @@
+rpush -20
+rpush -3
+rpush 14
+rpush -10
+rpush 7
+rpush -17
+rpush 0
+rpush 17
+rpush -7
+rpush 10
+rpush -14
+rpush 3
+rpush 20
+rpush -4
+rpush 13
+rpush -11
+rpush 6
+rpush -18
+rpush -1
+rpush 16
+rpush -8
+rpush 9
+rpush -15
+rpush 2
+rpush 19
+rpush -5
+rpush 12
+rpush -12
+rpush 5
+rpush -19
+rpush -2
+rpush 15
+rpush -9
+rpush 8
+rpush -16
+rpush 1
+rpush 18
+rpush -6
+rpush 11
+rpush -13
+rpush 50
+rpush -50
+rpush 0
+show
+pop
+pop
+pop
+pop
+pop
+show
+pop
+pop
+pop
+pop
+pop
+show
+pop
+pop
+pop
+pop
+pop
+show
+pop
+pop
+pop
+pop
+pop
+show
+pop
+pop
+pop
+pop
+pop
+show
+pop
+pop
+pop
+pop
+pop
+show
+pop
+pop
+pop
+pop
+pop
+show
+pop
+pop
+pop
+pop
+pop
+show

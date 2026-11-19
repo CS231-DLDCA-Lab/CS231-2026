@@ -1,0 +1,26 @@
+rpush -1
+rpush -4
+rpush -4
+rpush -9
+rpush -6
+rpush -5
+show
+pop
+show
+pop
+show
+rpush -4
+rpush 0
+show
+pop
+show
+pop
+show
+pop
+show
+pop
+show
+pop
+show
+pop
+show

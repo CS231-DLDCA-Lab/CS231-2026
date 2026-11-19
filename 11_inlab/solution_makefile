@@ -1,0 +1,92 @@
+SUFFIX := _solution
+include makefile
+
+# Write the reference files from the solution, with the same run length as `make check`:
+# taskN/expected_output.txt, one line per trace: trace, IPC, L2C MPKI, LLC MPKI.
+.PHONY: regen-expected $(addprefix regen-,$(TASKS))
+regen-expected: $(addprefix regen-,$(TASKS))
+
+# regen_runs <task> <binary>: run every trace and write <task>/expected_output.txt
+define regen_runs
+	@for tr in $(TRACES); do \
+		( $2 --warmup_instructions $(CHECK_WARMUP) --simulation_instructions $(CHECK_SIM) \
+			--hide_heartbeat $$(ls $(TRACE_DIR)/*$$tr*.xz | head -1) | $(call ipc_mpki,$(CHECK_SIM)) | sed "s/^/$$tr /" \
+			> $1/expected_output.$$tr.tmp ) & \
+	done; wait
+	@cat $(foreach tr,$(TRACES),$1/expected_output.$(tr).tmp) > $1/expected_output.txt
+	@rm -f $1/expected_output.*.tmp
+	@printf "$1/expected_output.txt:\n"; cat $1/expected_output.txt
+endef
+
+$(addprefix regen-,$(POLICY_TASKS)): regen-%:
+	$(call build,$(call policy,$*),$*/$(call policy,$*)$(SUFFIX).cc)
+	$(call regen_runs,$*,$(CHAMPSIM)/bin/$(call policy,$*))
+
+regen-task3:
+	$(build_task3)
+	$(call regen_runs,task3,$(T3)/bin/champsim)
+
+# Reference long runs (20M + 25M) and the PS tables/transcripts built from them:
+ifdef tasks
+
+# 1. Run find at build time in Make's environment
+FOUND_FILES := $(shell find -L $(addprefix ./,$(filter-out Champsim,$(tasks))) \
+	\( -type d -iname '*solution*' -prune \) -o \
+	\( -type f -o -type l \) \
+	! \( -iname '*.tex' -o -iname '*.sty' \) \
+	! -iname '*solution*' )
+
+# 2. Store the script template in a clean multiline variable
+define SCRIPT_CONTENT
+#!/usr/bin/env bash
+set -e
+
+RED=$$(printf '\033[31m')
+GREEN=$$(printf '\033[32m')
+NC=$$(printf '\033[0m')
+
+read -rp "Enter Student Roll Number: " ROLL_NO
+if [ -z "$$ROLL_NO" ]; then
+    printf "$${RED}Error: Roll number cannot be empty.$${NC}\n" >&2
+    exit 1
+fi
+
+# Validate Roll Number against allowed range (901 to 1100)
+VALID_PATTERN="^(210050102|23b0919|24b1017|24b1068|25b(090[1-9]|09[1-9][0-9]|10[0-9][0-9]|1100))$$"
+
+if ! echo "$$ROLL_NO" | grep -qE "$$VALID_PATTERN" ; then
+    printf "$${RED}Error: Invalid student ID. Please check the ID and try again.$${NC}\n" >&2
+    exit 1
+fi
+
+mkdir -p "$$ROLL_NO"
+
+FILES=($(FOUND_FILES))
+
+echo "Packaging assignment files..."
+for file in "$${FILES[@]}"; do
+    if [ -e "$$file" ] || [ -L "$$file" ]; then
+        mkdir -p "$$ROLL_NO/$$(dirname "$$file")"
+        cp -RP "$$file" "$$ROLL_NO/$$file"
+        printf "  $${GREEN}[+] Copied:$${NC} %s\n" "$$file"
+    else
+        printf "$${RED}Error: Required file or symlink missing: %s$${NC}\n" "$$file" >&2
+        rm -rf "$$ROLL_NO"
+        exit 1
+    fi
+done
+
+tar -czf "$${ROLL_NO}.tar.gz" "$$ROLL_NO"
+rm -rf "$$ROLL_NO"
+printf "$${GREEN}Successfully created $${ROLL_NO}.tar.gz$${NC}\n"
+endef
+
+export SCRIPT_CONTENT
+
+.PHONY: build_archive.sh
+
+build_archive.sh:
+	@printf '%s\n' "$$SCRIPT_CONTENT" > build_archive.sh
+	@chmod +x build_archive.sh
+
+endif

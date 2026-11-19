@@ -24,7 +24,8 @@ trap 'cp "$backup" "$prefs"; rm -f "$backup"' EXIT
 if grep -q 'key="forwarding"' "$prefs"; then
   sed -i 's|<entry key="forwarding" value="[a-z]*"/>|<entry key="forwarding" value="'"$val"'"/>|' "$prefs"
 else
-  sed -i 's|</map>|<entry key="forwarding" value="'"$val"'"/></map>|' "$prefs"
+  # A fresh prefs file has an empty, self-closing <map .../>, so open it up first.
+  sed -i -e 's|<map \([^>]*\)/>|<map \1></map>|' -e 's|</map>|<entry key="forwarding" value="'"$val"'"/></map>|' "$prefs"
 fi
 # Stdout of the program plus the cycle count from the simulator itself.
 out=$(printf 'load %s\nrun\nexit\n' "$prog" | run -v 2>&1)

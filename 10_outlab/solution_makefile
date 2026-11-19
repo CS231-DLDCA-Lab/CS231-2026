@@ -1,0 +1,101 @@
+SUFFIX := _solution
+include makefile
+
+# Write the quickcheck reference files from the solution (5M + 10M):
+# taskN/expected_output.txt, one line per trace: trace, IPC, LLC MPKI, dead on arrival, predicted dead.
+.PHONY: regen-expected $(addprefix regen-,$(TASKS))
+regen-expected: $(addprefix regen-,$(TASKS))
+
+$(addprefix regen-,$(TASKS)): regen-%:
+	$(call build_task,$*)
+	@for tr in $(TRACES); do \
+		( .$*_champsim/bin/champsim --warmup_instructions $(QUICK_WARMUP) --simulation_instructions $(QUICK_SIM) \
+			--hide_heartbeat $$(ls $(TRACE_DIR)/*$$tr*.xz) | $(call results,$(QUICK_SIM)) | sed "s/^/$$tr /" \
+			> $*/expected_output.$$tr.tmp ) & \
+	done; wait
+	@cat $(foreach tr,$(TRACES),$*/expected_output.$(tr).tmp) > $*/expected_output.txt
+	@rm -f $*/expected_output.*.tmp
+	@printf "$*/expected_output.txt:\n"; cat $*/expected_output.txt
+
+# Reference long runs (20M + 25M): the PS tables and the longcheck references
+# (taskN/expected_output_long.txt) are built from them:
+#   ./solution-make tables        (JOBS=4 runs at a time, nice 19; logs kept in .long_runs/)
+LONG_DIR := .long_runs
+JOBS ?= 4
+.PHONY: tables
+tables:
+	$(build_lru)
+	$(call build_task,task1)
+	$(call build_task,task2)
+	$(call build_task,task3)
+	$(call build_task,task4)
+	@mkdir -p $(LONG_DIR) && $(foreach t,lru $(TASKS),cp .$t_champsim/bin/champsim $(LONG_DIR)/$t &&) true
+	@printf "Running 20 long runs, $(JOBS) at a time, into $(LONG_DIR)/\n"
+	@for b in lru $(TASKS); do for t in $(TRACES); do echo "$$b $$t $$(ls $(TRACE_DIR)/*$$t*.xz)"; done; done | \
+		xargs -P $(JOBS) -n 3 sh -c 'nice -n 19 $(LONG_DIR)/$$0 --warmup_instructions $(LONG_WARMUP) --simulation_instructions $(LONG_SIM) \
+			--hide_heartbeat $$2 > $(LONG_DIR)/$$0.$$1.log 2>&1'
+	@python3 tables_solution.py $(LONG_DIR)
+
+ifdef tasks
+
+# 1. Run find at build time in Make's environment
+FOUND_FILES := $(shell find -L $(addprefix ./,$(filter-out Champsim,$(tasks))) \
+	\( -type d -iname '*solution*' -prune \) -o \
+	\( -type f -o -type l \) \
+	! \( -iname '*.tex' -o -iname '*.sty' \) \
+	! -iname '*solution*' )
+
+# 2. Store the script template in a clean multiline variable
+define SCRIPT_CONTENT
+#!/usr/bin/env bash
+set -e
+
+RED=$$(printf '\033[31m')
+GREEN=$$(printf '\033[32m')
+NC=$$(printf '\033[0m')
+
+read -rp "Enter Student Roll Number: " ROLL_NO
+if [ -z "$$ROLL_NO" ]; then
+    printf "$${RED}Error: Roll number cannot be empty.$${NC}\n" >&2
+    exit 1
+fi
+
+# Validate Roll Number against allowed range (901 to 1100)
+VALID_PATTERN="^(210050102|23b0919|24b1017|24b1068|25b(090[1-9]|09[1-9][0-9]|10[0-9][0-9]|1100))$$"
+
+if ! echo "$$ROLL_NO" | grep -qE "$$VALID_PATTERN" ; then
+    printf "$${RED}Error: Invalid student ID. Please check the ID and try again.$${NC}\n" >&2
+    exit 1
+fi
+
+mkdir -p "$$ROLL_NO"
+
+FILES=($(FOUND_FILES))
+
+echo "Packaging assignment files..."
+for file in "$${FILES[@]}"; do
+    if [ -e "$$file" ] || [ -L "$$file" ]; then
+        mkdir -p "$$ROLL_NO/$$(dirname "$$file")"
+        cp -RP "$$file" "$$ROLL_NO/$$file"
+        printf "  $${GREEN}[+] Copied:$${NC} %s\n" "$$file"
+    else
+        printf "$${RED}Error: Required file or symlink missing: %s$${NC}\n" "$$file" >&2
+        rm -rf "$$ROLL_NO"
+        exit 1
+    fi
+done
+
+tar -czf "$${ROLL_NO}.tar.gz" "$$ROLL_NO"
+rm -rf "$$ROLL_NO"
+printf "$${GREEN}Successfully created $${ROLL_NO}.tar.gz$${NC}\n"
+endef
+
+export SCRIPT_CONTENT
+
+.PHONY: build_archive.sh
+
+build_archive.sh:
+	@printf '%s\n' "$$SCRIPT_CONTENT" > build_archive.sh
+	@chmod +x build_archive.sh
+
+endif

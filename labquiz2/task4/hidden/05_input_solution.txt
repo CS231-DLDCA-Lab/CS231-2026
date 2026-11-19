@@ -1,0 +1,101 @@
+push 0
+push -2
+push 4
+push -1
+push 3
+push 0
+pop
+show
+push 2
+push -4
+push 1
+push -3
+push 0
+push -2
+pop
+show
+push 4
+push -1
+push 3
+push 0
+push 2
+push -4
+pop
+show
+push 1
+push -3
+push 0
+push -2
+push 4
+push -1
+pop
+show
+push 3
+push 0
+push 2
+push -4
+push 1
+push -3
+pop
+show
+push 0
+push -2
+push 4
+push -1
+push 3
+push 0
+pop
+show
+push 2
+push -4
+push 1
+push -3
+push 0
+push -2
+pop
+show
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+pop
+show
+push -3
+push -3
+push 4
+show
+pop
+pop
+pop
+show
+regs

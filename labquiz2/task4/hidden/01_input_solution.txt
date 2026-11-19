@@ -1,0 +1,20 @@
+push -1
+show
+push -4
+show
+push -4
+show
+push -9
+show
+push -6
+show
+push -5
+show
+push -4
+show
+push 0
+show
+push -4
+show
+push 0
+show
