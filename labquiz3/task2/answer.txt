@@ -1,0 +1,8 @@
+Task 2 part (b): a case where strict inclusion breaks.
+Write your sequence of events below (E1, E2, ...).
+
+
+
+Task 2 part (d): which misses go down with an inclusive LLC? (at most 4 words)
+
+

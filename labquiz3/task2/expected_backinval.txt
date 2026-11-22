@@ -1,0 +1,6 @@
+soplex cpu0_L2C 6
+soplex cpu0_L1D 6
+soplex cpu0_L1I 12
+mcf cpu0_L2C 1
+mcf cpu0_L1D 17
+mcf cpu0_L1I 15

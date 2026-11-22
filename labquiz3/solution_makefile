@@ -1,0 +1,53 @@
+# Authors only: the targets of makefile, built from the *_solution files (./solution-make ...).
+SOL := _solution
+include makefile
+
+# task3/cache.a ships to students: the simulator, compiled from cache_solution.cpp without debug
+# information and with local symbols stripped. Rebuild it after any change to cache_solution.cpp, with
+# the oldest g++ the lab machines have (g++-13):  ./solution-make task3/cache.a
+task3/cache.a: task3/cache_solution.cpp task3/cache.h
+	@$(CXX) -O2 -std=c++20 -c -o task3/cache_sim.o task3/cache_solution.cpp
+	@strip --strip-unneeded task3/cache_sim.o
+	@rm -f $@
+	@ar rcs $@ task3/cache_sim.o
+	@rm -f task3/cache_sim.o
+	@echo "built $@ with $(CXX)"
+
+# Part A grading: compares part_a() of a cache_info.cpp with the true parameters of a roll number.
+#   ./solution-make grade-a ROLL=23b0950 [ANS=path/to/cache_info.cpp]
+ANS ?= task3/cache_info.cpp
+.PHONY: grade-a
+grade-a:
+	@$(CXX) -O2 -std=c++20 -o grade_a.out task3/grade_a_solution.cpp $(ANS)
+	@./grade_a.out $(ROLL)
+
+# Regenerate the expected outputs of task1, task2 and task3 part (b) from the solutions.
+.PHONY: regen-expected regen-task1
+regen-expected: task3.out regen-task1
+	@for i in task3/tests/b/*_input.txt; do ./task3.out < $$i > $${i%_input.txt}_output.txt; done; \
+	echo "regenerated task3/tests/b"
+
+# task2/expected_output.txt ("trace IPC LLC-MPKI") and task2/expected_backinval.txt ("trace cache BACKINVAL-MISS"),
+# from the solution, same run length as task2-check.
+# TASK2_TOL1 (makefile) sits below the gap of the unchanged task2/cache.cc (task2-check, largest gap:
+# soplex 0.0284%, mcf 0.0821%), so it scores 0 in part (a).
+.PHONY: regen-task2
+regen-expected: regen-task2
+regen-task2:
+	$(build_task2)
+	@for tr in $(sort $(foreach t,$(TASK2A_TCGS) $(TASK2C_TCGS),$(firstword $(subst :, ,$t)))); do \
+		( $(T2)/bin/champsim --warmup_instructions $(CHECK_WARMUP) --simulation_instructions $(CHECK_SIM) --hide_heartbeat \
+			$$(ls $(TRACE_DIR)/*$$tr*.xz | head -1) > task2/run.$$tr.tmp; \
+		  $(call ipc_mpki,$(CHECK_SIM)) < task2/run.$$tr.tmp | sed "s/^/$$tr /" > task2/expected_output.$$tr.tmp; \
+		  awk -v tr=$$tr '/BACKINVAL MISS/ {print tr, $$1, $$4}' task2/run.$$tr.tmp > task2/expected_backinval.$$tr.tmp ) & \
+	done; wait
+	@cat $(foreach t,$(TASK2A_TCGS),task2/expected_output.$(firstword $(subst :, ,$t)).tmp) > task2/expected_output.txt
+	@cat $(foreach t,$(TASK2C_TCGS),task2/expected_backinval.$(firstword $(subst :, ,$t)).tmp) > task2/expected_backinval.txt
+	@rm -f task2/expected_output.*.tmp task2/expected_backinval.*.tmp task2/run.*.tmp
+	@printf "task2/expected_output.txt:\n"; cat task2/expected_output.txt
+	@printf "task2/expected_backinval.txt:\n"; cat task2/expected_backinval.txt
+
+# task1/expected_output.txt: "part trace IPC LLC-MPKI" per TCG, from the same runs as task1-check
+regen-task1: task1-runs
+	@for t in $(TASK1_TCGS); do p=$${t%%:*}; r=$${t#*:}; tr=$${r%%:*}; echo "$$p $$tr $$(cat .tmp/task1.$$p.$$tr)"; done > task1/expected_output.txt
+	@printf "task1/expected_output.txt:\n"; cat task1/expected_output.txt

@@ -1,0 +1,36 @@
+Task 2 part (b): a case where strict inclusion breaks.
+
+No. Back-invalidation only removes copies that are already in L1/L2. A block that is still
+in flight towards L1/L2 when the LLC evicts it is not found, and it arrives afterwards:
+
+E1: line X misses in L2C; the request goes to the LLC and hits there
+E2: the LLC sends X up; the response sits in L2C's MSHR / fill queue (in flight)
+E3: line Y misses in the LLC, and X is chosen as the eviction victim
+E4: back-invalidation looks for X in L1I, L1D and L2C, finds no copy, removes nothing
+E5: the LLC evicts X
+E6: the in-flight response arrives and X is filled into L2C (and L1D)
+Now X is in L2C but not in the LLC, so strict inclusion is broken.
+
+The same happens with a writeback in flight: L1D's dirty copy of X sits in L2C's write
+queue while the LLC evicts X (and L2C's copy); the writeback then misses in L2C and fills X
+there, so X is in L2C but not in the LLC.
+
+---
+
+# Any answer matching the above gets full 3. Getting close to it with minor mistakes gets 2.
+# An alternate answer that gets 2 is considering the case of write-forwarding where temporarily
+# the LLC can enter non-inclusive state.
+
+====
+
+Task 2 part (d): which misses go down with an inclusive LLC? (at most 4 words)
+
+LLC WRITEBACK misses
+
+With an inclusive LLC, every block that L2C writes back is still in the LLC, so a
+writeback always hits there. LLC WRITEBACK misses drop to 0 (soplex 4 -> 0, mcf 2 -> 0,
+from make lru vs make task2).
+
+---
+
+# Any answer matching above gets full 3. Multiple answers or vague variants don't get marks.

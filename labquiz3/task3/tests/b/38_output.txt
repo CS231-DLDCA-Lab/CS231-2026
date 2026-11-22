@@ -1,0 +1,1 @@
+l1_cache_size   65536
