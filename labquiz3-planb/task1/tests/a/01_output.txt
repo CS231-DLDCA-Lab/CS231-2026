@@ -1,0 +1,3 @@
+hello
+my_write returned 6
+exit code 0

@@ -1,0 +1,22 @@
+# Authors only: the targets of makefile, built from the *_solution files (./solution-make ...).
+SOL := _solution
+include makefile
+
+# Q3 limits, measured with experiments/q3/sl/sl_bench.sh (dev machine, sl1-7, cs101-148): solution
+# about 1.00x, i,j,k without a local sum 1.44-1.56x, other loop orders 12-38x.
+
+# task3/reference ships to students. Rebuild it after any change to main.cpp, base.cpp, kernels.h
+# or fast_solution.cpp, with g++-13:  ./solution-make clean && ./solution-make task3/reference
+.PHONY: task3/reference
+task3/reference: task3.out
+	strip -o $@ $<
+
+# Regenerate the expected outputs of task1 and task2 from the solutions.
+.PHONY: regen-expected
+regen-expected: task1a.out task1b.out task1c.out task1full.out task2.out
+	@for d in task1/tests/a:task1a task1/tests/b:task1b task1/tests/c:task1c task1/tests/full:task1full \
+		task2/tests:task2; do \
+		dir=$${d%:*}; bin=./$${d#*:}.out; \
+		for i in $$dir/*_input*.txt; do [ -e "$$i" ] || continue; \
+			o=$$(echo $$i | sed 's/_input/_output/'); $$bin < $$i > $$o; done; \
+		echo "regenerated $$dir"; done

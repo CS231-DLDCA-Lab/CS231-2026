@@ -1,0 +1,4 @@
+binom(1, 1) = 1
+binom(0, 0) = 1
+binom(7, 0) = 1
+binom(7, 7) = 1

@@ -1,0 +1,2 @@
+my_write("no scores\n", 10)
+my_exit(255)

@@ -1,0 +1,11 @@
+n = 0
+no scores
+exit code 255
+n = 3
+exit code 81
+n = 1
+exit code 55
+n = 2
+exit code 0
+n = 2
+exit code 75

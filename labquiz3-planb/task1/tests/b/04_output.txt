@@ -1,0 +1,2 @@
+weighted_avg(marks, credits, 5)
+my_exit(45)

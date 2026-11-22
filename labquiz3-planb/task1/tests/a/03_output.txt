@@ -1,0 +1,2 @@
+my_write returned 0
+exit code 0
