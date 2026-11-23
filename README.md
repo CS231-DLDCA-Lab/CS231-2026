@@ -10,7 +10,7 @@
 
 [**CS231 Mega Feedback Form**](https://forms.gle/SwjpLZEidyc4rwYK7)
 
-[**CS231 LabQuiz1 Crib Form**](https://forms.gle/Z7eurtrXLGE7ccvEA)
+(new!) [**CS231 LabQuiz2 & 3 Crib Form**](https://forms.gle/QyLeoYKbX6KNBg4u8)
 
 [**CS231 Inlab Re-Evaluation Request Form**](https://docs.google.com/forms/d/e/1FAIpQLSfki4vqrKC4cpkJJB3ldHS-DOxl_E4kSprBl13Kh58UfaA6ng/viewform?usp=header)
 
