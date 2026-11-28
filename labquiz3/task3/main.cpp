@@ -5,6 +5,7 @@
 //                                 ADDR reads it, rm1 ADDR / rm2 ADDR remove its line from L1 / L2,
 //                                 reset empties the cache. ROLL may be demo (an example cache).
 // ./task3.out a                  print what part_a() returns
+// ./task3.out check ROLL         compare part_a() with the parameters of the cache of ROLL (or demo), and the marks
 // ./task3.out info ROLL          run get_cache_info on the cache of ROLL (or demo)
 // ./task3.out probe_parta ROLL   run your probe_parta (any access pattern you like) on the cache of ROLL
 // ./task3.out                    tests: reads a field name and 8 parameters (as for make_part_b) from
@@ -29,6 +30,7 @@ struct counting_cache : cache {
     void reset() noexcept override { inner->reset(); }
     void remove_from_l1(std::uint32_t addr) noexcept override { ++removes; inner->remove_from_l1(addr); }
     void remove_from_l2(std::uint32_t addr) noexcept override { ++removes; inner->remove_from_l2(addr); }
+    cache_info params() const noexcept override { return inner->params(); }
 };
 
 // Part B: runs your eight functions in the order of find_order (in cache_info.cpp). Each may read the
@@ -46,6 +48,42 @@ cache_info get_cache_info(cache* c) {
     for (finder f : find_order) {
         c->reset(); // every function starts from an empty cache
         f(c, info);
+    }
+    return info;
+}
+
+// Part B tests: runs only the function that finds field, on c. Every other function of find_order is
+// not run; its field is copied from truth at the point where it would have run. So the function sees
+// exactly the fields find_order lets it use, with the right values, and a wrong, slow or crashing
+// other function cannot fail the test.
+static cache_info run_one_finder(cache* c, const cache_info& truth, const std::string& field) {
+    using copier = void (*)(cache_info&, const cache_info&);
+    struct entry { finder f; const char* name; copier copy; };
+    static const entry table[8] = {
+        {find_l1_latency,    "l1_latency",      [](cache_info& d, const cache_info& s) { d.l1_latency = s.l1_latency; }},
+        {find_l2_latency,    "l2_latency",      [](cache_info& d, const cache_info& s) { d.l2_latency = s.l2_latency; }},
+        {find_dram_latency,  "dram_latency",    [](cache_info& d, const cache_info& s) { d.dram_latency = s.dram_latency; }},
+        {find_line_size,     "cache_line_size", [](cache_info& d, const cache_info& s) { d.cache_line_size = s.cache_line_size; }},
+        {find_l1_num_way,    "l1_num_way",      [](cache_info& d, const cache_info& s) { d.l1_num_way = s.l1_num_way; }},
+        {find_l1_cache_size, "l1_cache_size",   [](cache_info& d, const cache_info& s) { d.l1_cache_size = s.l1_cache_size; }},
+        {find_l2_num_way,    "l2_num_way",      [](cache_info& d, const cache_info& s) { d.l2_num_way = s.l2_num_way; }},
+        {find_l2_cache_size, "l2_cache_size",   [](cache_info& d, const cache_info& s) { d.l2_cache_size = s.l2_cache_size; }},
+    };
+    bool known = false;
+    for (entry const& e : table) known |= field == e.name;
+    if (!known) throw std::runtime_error("unknown field: " + field);
+
+    cache_info info{}; // all zero
+    for (finder f : find_order) {
+        for (entry const& e : table) {
+            if (e.f != f) continue;
+            if (field == e.name) {
+                c->reset(); // starts from an empty cache, as in get_cache_info
+                f(c, info);
+            } else {
+                e.copy(info, truth);
+            }
+        }
     }
     return info;
 }
@@ -92,6 +130,7 @@ static std::string impossible(const cache_info& i) {
 static int usage() {
     std::printf("usage: make task3 args=\"read ROLL WORD...\"   (ROLL may be demo; a WORD is ADDR, rm1 ADDR, rm2 ADDR or reset)\n"
                 "       make task3 args=\"a\"\n"
+                "       make task3 args=\"check ROLL\"\n"
                 "       make task3 args=\"info ROLL\"\n"
                 "       make task3 args=\"probe_parta ROLL\"\n");
     return 2;
@@ -114,8 +153,11 @@ int main(int argc, char** argv) {
             if (!(std::cin >> group)) return 1;
             for (unsigned& v : p) if (!(std::cin >> v)) return 1;
             auto c = make_part_b(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
+            // the true parameters, from the input (p = line size, then sets, ways, latency per level, dram)
+            cache_info const truth{std::uint16_t(p[0]), p[0] * p[1] * p[2], std::uint16_t(p[2]), std::uint16_t(p[3]),
+                                   p[0] * p[4] * p[5], std::uint16_t(p[5]), std::uint16_t(p[6]), std::uint16_t(p[7])};
             counting_cache w(c.get());
-            cache_info i = get_cache_info(&w);
+            cache_info i = run_one_finder(&w, truth, group);
             if (argc == 1) print_info(i, group);
             else std::printf("removes %llu\n", w.removes);
             return 0;
@@ -150,6 +192,31 @@ int main(int argc, char** argv) {
             print_info(i, "all");
             std::string why = impossible(i);
             if (!why.empty()) std::printf("these values cannot be a cache: %s\n", why.c_str());
+            return 0;
+        }
+        if (mode == "check" && argc == 3) {
+            // Part A: each field of part_a() against the cache of ROLL, with the marks of that field.
+            cache_info const want = make_named(argv[2])->params();
+            cache_info const i = part_a();
+            struct { const char* name; unsigned want, got; int marks; } const f[] = {
+                {"l1_latency",      want.l1_latency,      i.l1_latency,      1},
+                {"l2_latency",      want.l2_latency,      i.l2_latency,      1},
+                {"dram_latency",    want.dram_latency,    i.dram_latency,    1},
+                {"cache_line_size", want.cache_line_size, i.cache_line_size, 1},
+                {"l1_num_way",      want.l1_num_way,      i.l1_num_way,      2},
+                {"l1_cache_size",   want.l1_cache_size,   i.l1_cache_size,   2},
+                {"l2_num_way",      want.l2_num_way,      i.l2_num_way,      2},
+                {"l2_cache_size",   want.l2_cache_size,   i.l2_cache_size,   2},
+            };
+            int marks = 0;
+            for (auto const& x : f) {
+                bool ok = x.want == x.got;
+                marks += ok ? x.marks : 0;
+                std::printf("  %-16s want %8u  got %8u  %-5s %d/%d\n", x.name, x.want, x.got, ok ? "OK" : "WRONG", ok ? x.marks : 0, x.marks);
+            }
+            std::string why = impossible(i);
+            if (!why.empty()) std::printf("these values cannot be a cache: %s\n", why.c_str());
+            std::printf("task3a: %d/12 marks\n", marks);
             return 0;
         }
         if (mode == "info" && argc == 3) {

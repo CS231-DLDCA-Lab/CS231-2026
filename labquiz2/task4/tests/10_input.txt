@@ -1,11 +1,28 @@
-push 1
-push 2
-push 3
-push 4
+rpush 1
+rpush 2
+rpush 3
+rpush 4
+pop
+show
+rpush 5
+rpush 6
+rpush 7
+rpush 8
+rpush 9
 show
 pop
 show
-push 0
+rpush 10
+rpush 11
+rpush 12
+rpush 13
+rpush 14
+rpush 15
+rpush 16
+rpush 17
+rpush 18
+rpush 19
+rpush 20
 show
 pop
 show
@@ -15,5 +32,5 @@ pop
 show
 pop
 show
-push 6
+pop
 show

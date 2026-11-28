@@ -1,16 +1,18 @@
-push -3
-push 0
-push -7
+push 6
 push 2
-push -1
+push 9
+push 4
+push 7
+push 1
+push 8
+push 3
 show
 pop
-show
 pop
-show
 pop
-show
 pop
-show
+pop
+pop
+pop
 pop
 show

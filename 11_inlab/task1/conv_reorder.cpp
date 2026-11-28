@@ -1,8 +1,9 @@
 // conv_reorder.cpp  STAGE 1: a better loop order.  (TODO)
 //
-// Work on a group of 4 neighbouring output columns together. For each kernel weight,
-// load 4 input values and update 4 independent running sums; write the 4 outputs once
-// at the end. No single long dependency chain, and each output is written only once.
+// Loop interchange: put the two kernel loops (ky, kx) outside and the loop over the
+// columns (ox) inside. For one kernel weight, sweep the whole output row with
+// o[ox] += ir[ox] * k, where ir points at the matching input row. Clear the output
+// row to zero first. No new variables per pixel, no unrolling.
 
 #include "convolution.h"
 

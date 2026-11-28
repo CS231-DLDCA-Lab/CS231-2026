@@ -11,14 +11,18 @@ got=$testsdir/.got
 trap 'rm -f "$got"' EXIT
 RED='\033[31m' GREEN='\033[32m' RESET='\033[0m'
 
-# run_test NN: print PASS/FAIL; a failure also prints the diff command
+# run_test NN: print PASS/FAIL; a failure also prints why and the diff command
 run_test() {
-    local in=$testsdir/$1_input.txt out=$testsdir/$1_output.txt
+    local in=$testsdir/$1_input.txt out=$testsdir/$1_output.txt rc why
     timeout 20 "$bin" < "$in" > "$got" 2>&1
+    rc=$?
     if diff -q "$out" "$got" >/dev/null 2>&1; then
         printf "  ${GREEN}PASS${RESET} -- %s\n" "$in"
     else
-        printf "  ${RED}FAIL${RESET} -- %s    see: %s < %s | diff %s -\n" "$in" "$bin" "$in" "$out"
+        if [ $rc -eq 124 ]; then why="timed out after 20 s"
+        elif [ $rc -gt 128 ]; then why="crashed, signal $((rc - 128))"
+        else why="got '$(head -n 1 "$got" | tr -s ' ' | cut -c1-80)', expected '$(head -n 1 "$out" | tr -s ' ')'"; fi
+        printf "  ${RED}FAIL${RESET} -- %s (%s)    see: %s < %s | diff %s -\n" "$in" "$why" "$bin" "$in" "$out"
         return 1
     fi
 }

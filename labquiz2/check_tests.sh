@@ -4,6 +4,7 @@
 # Hidden tests live in taskN/hidden/ (NN_input_solution.txt, NN_output_solution.txt) and are
 # present only on the grader's setup.
 #
+# Without taskN/tests/groups.txt, each test is worth one mark.
 # If taskN/tests/groups.txt exists, the tests are reported by testcase group (TCG). Each line is
 #     group marks test...
 # where a test is NN (taskN/tests/NN_input.txt) or the word hidden (every test in taskN/hidden/).
@@ -45,8 +46,21 @@ groups=$task/tests/groups.txt
 if [ ! -f "$groups" ]; then
     set -- "$task"/tests/*_input.txt
     if [ ! -e "$1" ]; then echo "$task: no testcases here, run make $task"; exit 0; fi
-    for t in "$@"; do run_test "$t" "${t%_input.txt}_output.txt" show; done
-    if [ ${#hidden_inputs[@]} -eq 0 ]; then echo "$hidden_msg"; else run_hidden; fi
+    # no groups: each test is worth one mark
+    pass=0 total=0
+    for t in "$@"; do
+        total=$((total + 1))
+        run_test "$t" "${t%_input.txt}_output.txt" show && pass=$((pass + 1))
+    done
+    if [ ${#hidden_inputs[@]} -eq 0 ]; then
+        echo "$hidden_msg"
+    else
+        for t in "${hidden_inputs[@]}"; do
+            total=$((total + 1))
+            run_test "$t" "${t%_input_solution.txt}_output_solution.txt" && pass=$((pass + 1))
+        done
+    fi
+    echo "$task: $pass/$total marks from the tests that ran"
     exit 0
 fi
 

@@ -1,7 +1,8 @@
 // conv_simd.cpp  STAGE 2: SIMD.  (TODO)
 //
-// The 4 running sums from Stage 1 fit in one 128-bit SSE register (4 floats). Replace
-// the 4 scalar sums with one __m128 accumulator and do all 4 columns per instruction.
+// The inner ox loop of Stage 1 works on consecutive floats, which is what one 128-bit
+// SSE register holds (4 floats). Process 4 columns per iteration: load 4 input values
+// and 4 output values, multiply the inputs by the weight, add, store 4 outputs.
 // Useful intrinsics: _mm_setzero_ps, _mm_set1_ps (weight into all 4 lanes),
 // _mm_loadu_ps, _mm_mul_ps, _mm_add_ps, _mm_storeu_ps.
 

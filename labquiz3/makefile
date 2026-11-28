@@ -20,7 +20,7 @@ RESET := "\\033[0m"
 .PHONY: default clean check
 
 default:
-	@echo "Usage: make check | make task1a | make task1b | make task1-check | make task2 | make task2-check | make task3 | make task3-check | make clean"
+	@echo "Usage: make check | make task1a | make task1b | make task1-check | make task2 | make task2-check | make task3 | make task3-check | make task3a-check roll=ROLL | make clean"
 
 # Runs every check, then adds up the "taskX: s/t marks" lines into a grand total.
 check:
@@ -243,7 +243,7 @@ task2-check:
 	echo "task2: $$score/$$total marks"; echo
 
 # ==== TASK 3: cache_info.cpp, run against the simulated caches in task3/cache.a ====
-.PHONY: task3 task3-check task3b-check task3.out
+.PHONY: task3 task3-check task3a-check task3b-check task3.out
 
 task3.out: task3/main.o task3/cache_info$(SOL).o task3/cache.a
 	@$(CXX) $(LDFLAGS) -o $@ $^
@@ -256,7 +256,7 @@ else
 	@./task3.out $(args); printf "\nReturn Code: %d\n" $$?
 endif
 
-# Part B: tests in task3/tests/b. Part A is graded after submission, against the cache of your roll number.
+# Part B: tests in task3/tests/b. Part A: see task3-check below.
 task3b-check: task3.out
 	@echo "---- task3 part (b) ----"
 	@mkdir -p .tmp; ./check_tests.sh task3b ./task3.out task3/tests/b | tee .tmp/task3b.log; echo
@@ -265,11 +265,16 @@ task3b-check: task3.out
 		r=$$((r + $${n:-1})); done; \
 	echo "  remove_from_l1/l2 calls in the Part (b) tests: $$r"; \
 	if [ $$r -eq 0 ] && grep -q '^task3b: 12/12 marks' .tmp/task3b.log; then \
-		echo "  on track: Part (c) also needs every Part (a) field right, which is checked after submission"; \
+		echo "  on track: Part (c) also needs every Part (a) field right (make task3a-check roll=ROLL)"; \
 	elif [ $$r -ne 0 ]; then echo "  not earned: Part (b) calls remove_from_l1/l2"; \
 	else echo "  not earned yet: Part (b) must pass every test"; fi; echo
 
-# Part A has no local check: it is graded after submission.
+# Part A: make task3a-check roll=ROLL compares part_a() with the cache of ROLL, field by field.
+task3a-check: task3.out
+	@if [ -z "$(roll)" ]; then echo "usage: make task3a-check roll=ROLL"; exit 2; fi
+	@echo "---- task3 part (a), roll $(roll) ----"
+	@./task3.out check $(roll)
+
 task3-check: task3b-check
 
 ifdef tasks

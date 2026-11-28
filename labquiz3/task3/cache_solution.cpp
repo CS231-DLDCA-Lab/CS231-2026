@@ -125,6 +125,13 @@ namespace gbnhmjvgf {
             : l1(lg2_l1_num_set, val_l1_num_way, lg2_cache_line), l2(lg2_l2_num_set, val_l2_num_way, lg2_cache_line), //
               l1_latency(val_l1_latency), l2_latency(val_l2_latency), dram_latency(val_dram_latency) {}
 
+        // computed from the levels, so the object keeps its size
+        cache_info params() const noexcept override {
+            std::uint32_t const line = 1u << l1.lg2_cache_line;
+            return {std::uint16_t(line), (line << l1.lg2_num_set) * l1.num_way, l1.num_way, l1_latency,
+                    (line << l2.lg2_num_set) * l2.num_way, l2.num_way, l2_latency, dram_latency};
+        }
+
         // NINE, no write-backs: a miss fills L2 (if it missed there) and L1; a victim of either level is
         // dropped. Both levels are LRU; L2 sees only the reads that miss L1.
         std::uint16_t read(std::uint32_t addr) noexcept override {

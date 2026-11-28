@@ -6,6 +6,9 @@
 //     push V    push the signed 64-bit value V
 //     pop       pop the largest value and print it
 //     show      print size and data[0 .. size-1]
+//     rpush V   push V with the standard C++ version, not push_heap
+//     rpop      pop with the standard C++ version, not pop_heap
+//     regs      print which callee-saved registers push_heap or pop_heap changed
 // The heap operations themselves are push_heap and pop_heap in heap.s.
 // After every call the harness checks what the call may and may not change,
 // and prints an ERROR line if a rule is broken.
@@ -26,6 +29,57 @@ void push_heap(heap* h, int64_t val);   // heap.s
 int64_t pop_heap(heap* h);              // heap.s
 }
 
+
+// Calls fn(h, val) with known values in the callee-saved registers, restores them,
+// and stores what came back. A broken convention then shows up only in the regs command.
+extern "C" int64_t guarded_call(void* fn, heap* h, int64_t val, uint64_t* after);
+asm(R"(
+    .pushsection .text
+guarded_call:
+    push %rbx
+    push %rbp
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    push %rcx
+    mov %rdi, %rax
+    mov %rsi, %rdi
+    mov %rdx, %rsi
+    movabs $0x1111111111111111, %rbx
+    movabs $0x2222222222222222, %rbp
+    movabs $0x3333333333333333, %r12
+    movabs $0x4444444444444444, %r13
+    movabs $0x5555555555555555, %r14
+    movabs $0x6666666666666666, %r15
+    call *%rax
+    pop %rcx
+    mov %rbx, 0(%rcx)
+    mov %rbp, 8(%rcx)
+    mov %r12, 16(%rcx)
+    mov %r13, 24(%rcx)
+    mov %r14, 32(%rcx)
+    mov %r15, 40(%rcx)
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbp
+    pop %rbx
+    ret
+    .popsection
+)");
+static const uint64_t want_regs[6] = {0x1111111111111111, 0x2222222222222222, 0x3333333333333333,
+                                      0x4444444444444444, 0x5555555555555555, 0x6666666666666666};
+static const char* reg_names[6] = {"rbx", "rbp", "r12", "r13", "r14", "r15"};
+static bool reg_changed[6];
+static int64_t guarded(void* fn, heap* h, int64_t v) {
+    uint64_t after[6];
+    int64_t r = guarded_call(fn, h, v, after);
+    for (int k = 0; k < 6; k++) if (after[k] != want_regs[k]) reg_changed[k] = true;
+    return r;
+}
+
 // Field order and types fix the layout seen by heap.s:
 //   offset 0: data, offset 8: size, offset 16: capacity
 class heap {
@@ -42,15 +96,39 @@ public:
     void push(int64_t v) {
         if (size == capacity) grow(2 * capacity);   // push_heap always has room
         before();
-        push_heap(this, v);
+        guarded((void*)push_heap, this, v);
         after_push();
     }
 
     std::optional<int64_t> pop() {
         if (size == 0) return std::nullopt;         // pop_heap is never called on an empty heap
         before();
-        int64_t top = pop_heap(this);
+        int64_t top = guarded((void*)pop_heap, this, 0);
         after_pop(top);
+        return top;
+    }
+
+    // Standard operations, used by the rpush and rpop commands so one function can be tested alone.
+    void rpush(int64_t v) {
+        if (size == capacity) grow(2 * capacity);
+        size_t i = size++;
+        while (i > 0 && data[(i - 1) / 2] < v) { data[i] = data[(i - 1) / 2]; i = (i - 1) / 2; }
+        data[i] = v;
+    }
+    std::optional<int64_t> rpop() {
+        if (size == 0) return std::nullopt;
+        size_t n = --size, i = 0;
+        int64_t top = data[0], last = data[n];
+        data[n] = top;
+        for (;;) {
+            size_t c = 2 * i + 1;
+            if (c >= n) break;
+            if (c + 1 < n && data[c + 1] > data[c]) c++;
+            if (data[c] <= last) break;
+            data[i] = data[c];
+            i = c;
+        }
+        data[i] = last;
         return top;
     }
 
@@ -130,6 +208,17 @@ int main() {
             std::optional<int64_t> top = h.pop();
             if (top) std::printf("pop %" PRId64 "\n", *top);
             else     std::printf("pop empty\n");
+        } else if (std::strcmp(cmd, "rpush") == 0 && std::sscanf(line, "%*s %lld", &v) == 1) {
+            h.rpush(v);
+        } else if (std::strcmp(cmd, "rpop") == 0) {
+            std::optional<int64_t> top = h.rpop();
+            if (top) std::printf("pop %" PRId64 "\n", *top);
+            else     std::printf("pop empty\n");
+        } else if (std::strcmp(cmd, "regs") == 0) {
+            bool any = false;
+            std::printf("callee-saved:");
+            for (int k = 0; k < 6; k++) if (reg_changed[k]) { std::printf(" %s", reg_names[k]); any = true; }
+            std::printf(any ? " changed\n" : " ok\n");
         } else if (std::strcmp(cmd, "show") == 0) {
             std::printf("size %zu:", h.size);
             for (size_t k = 0; k < h.size; k++) std::printf(" %" PRId64, h.data[k]);

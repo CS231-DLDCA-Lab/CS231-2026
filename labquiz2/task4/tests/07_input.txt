@@ -1,7 +1,7 @@
-push 9
-push 1
-push 8
-push 0
+rpush 9
+rpush 8
+rpush 1
+rpush 0
 show
 pop
 show

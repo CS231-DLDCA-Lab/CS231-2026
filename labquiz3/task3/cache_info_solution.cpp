@@ -10,6 +10,17 @@ cache_info part_a() {
     const char* roll = std::getenv("PART_A_ROLL");
     std::unique_ptr<cache> c = make_part_a(roll ? roll : "23b0900");
     return get_cache_info(c.get());
+
+    // cache_info info{};
+    // info.cache_line_size = 0; // TODO
+    // info.l1_cache_size   = 0; // TODO (bytes)
+    // info.l1_num_way      = 0; // TODO
+    // info.l1_latency      = 0; // TODO
+    // info.l2_cache_size   = 0; // TODO (bytes)
+    // info.l2_num_way      = 0; // TODO
+    // info.l2_latency      = 0; // TODO
+    // info.dram_latency    = 0; // TODO
+    // return info;
 }
 
 // ---------------------------------------------------------------- probe_parta: NOT GRADED

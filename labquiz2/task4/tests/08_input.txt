@@ -1,7 +1,16 @@
-push 9
-push 8
-push 1
-push 0
+rpush 7
+rpush 6
+rpush 5
+rpush 4
+rpush 3
+rpush 2
+rpush 1
+show
+pop
+show
+pop
+show
+pop
 show
 pop
 show

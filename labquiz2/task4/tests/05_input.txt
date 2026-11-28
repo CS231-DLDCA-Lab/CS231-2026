@@ -1,12 +1,3 @@
-push 5
-show
-push 3
-show
-push 8
-show
-push 1
-show
-push 9
-show
-push 2
+rpush 7
+pop
 show

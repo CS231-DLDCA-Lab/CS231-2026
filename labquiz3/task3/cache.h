@@ -7,29 +7,6 @@
 #include <string>
 #include <memory>
 
-// A simulated two-level cache (L1 and L2) in front of DRAM. Its code is in cache.a.
-struct cache {
-    virtual ~cache() = default;
-    // Reads one byte at address addr and returns how many cycles the read took.
-    virtual std::uint16_t read(std::uint32_t addr) noexcept = 0;
-    // Empties both levels, as if no address had been read yet.
-    virtual void reset() noexcept                           = 0;
-    // Removes the line that holds addr from L1 only (or from L2 only). Nothing else changes: the line
-    // is not moved to the other level, and the other lines keep their LRU order. No effect if absent.
-    virtual void remove_from_l1(std::uint32_t addr) noexcept = 0;
-    virtual void remove_from_l2(std::uint32_t addr) noexcept = 0;
-};
-
-// roll_num must be 2Nb0900..2Nb1200 (lowercase b) with N = 3, 4 or 5, or one listed exception;
-// otherwise throws std::invalid_argument
-std::unique_ptr<cache> make_part_a(std::string roll_num);
-
-// Builds a cache with the given parameters; throws std::invalid_argument if they break a rule.
-std::unique_ptr<cache> make_part_b(std::uint16_t cache_line_size,
-                   std::uint16_t l1_num_set, std::uint16_t l1_num_way, std::uint16_t l1_latency,
-                   std::uint16_t l2_num_set, std::uint16_t l2_num_way, std::uint16_t l2_latency,
-                   std::uint16_t dram_latency);
-
 // The eight parameters of a cache. A level's size is cache_line_size * num_set * num_way bytes.
 struct cache_info {
     std::uint16_t cache_line_size; // bytes per line
@@ -41,6 +18,31 @@ struct cache_info {
     std::uint16_t l2_latency;      // cycles for a read that misses L1 and hits in L2
     std::uint16_t dram_latency;    // cycles for a read that misses both levels
 };
+
+// A simulated two-level cache (L1 and L2) in front of DRAM. Its code is in cache.a.
+struct cache {
+    virtual ~cache() = default;
+    // Reads one byte at address addr and returns how many cycles the read took.
+    virtual std::uint16_t read(std::uint32_t addr) noexcept = 0;
+    // Empties both levels, as if no address had been read yet.
+    virtual void reset() noexcept                           = 0;
+    // Removes the line that holds addr from L1 only (or from L2 only). Nothing else changes: the line
+    // is not moved to the other level, and the other lines keep their LRU order. No effect if absent.
+    virtual void remove_from_l1(std::uint32_t addr) noexcept = 0;
+    virtual void remove_from_l2(std::uint32_t addr) noexcept = 0;
+    // The eight parameters of this cache. Used by make task3 args="check ROLL" to grade Part A.
+    virtual cache_info params() const noexcept = 0;
+};
+
+// roll_num must be 2Nb0900..2Nb1200 (lowercase b) with N = 3, 4 or 5, or one listed exception;
+// otherwise throws std::invalid_argument
+std::unique_ptr<cache> make_part_a(std::string roll_num);
+
+// Builds a cache with the given parameters; throws std::invalid_argument if they break a rule.
+std::unique_ptr<cache> make_part_b(std::uint16_t cache_line_size,
+                   std::uint16_t l1_num_set, std::uint16_t l1_num_way, std::uint16_t l1_latency,
+                   std::uint16_t l2_num_set, std::uint16_t l2_num_way, std::uint16_t l2_latency,
+                   std::uint16_t dram_latency);
 
 // Part A, in cache_info.cpp: the parameters of the cache of your roll number.
 cache_info part_a();
