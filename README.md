@@ -1,3 +1,9 @@
+# Thank You
+
+Thank you for taking CS231 (Digital Logic Design & Computer Architecture) in 2026. It was a pleasure teaching you.
+
+---
+
 ## Schedule \& Links
 
 **Slot**     : L4 (Friday 2pm - 5pm)
